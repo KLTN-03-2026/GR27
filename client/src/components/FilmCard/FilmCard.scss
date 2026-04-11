@@ -1,0 +1,62 @@
+// MODIFIED: Wrap everything in the new wrapper class
+.film-card-wrapper {
+  // Styles that were previously global are now scoped
+  &.ant-col {
+    display: flex;
+  }
+
+  a {
+    display: flex;
+    width: 100%;
+  }
+
+  // Styles for the card itself remain the same but are now nested
+  .film-card-item {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    &:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      transform: translateY(-5px);
+    }
+
+    .film-card-poster {
+      height: 380px;
+      object-fit: cover;
+    }
+
+    .ant-card-body {
+      padding: 16px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .film-card-title {
+      margin-bottom: 12px;
+      min-height: 2.8em;
+      color: #333;
+    }
+
+    .film-card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+      color: #555;
+      margin-top: auto;
+    }
+
+    .age-rating-tag {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-weight: bold;
+    }
+  }
+}

@@ -1,0 +1,493 @@
+// src/pages/user/films/FilmDetailPage.scss
+.film-detail-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+
+  .film-header {
+    margin-bottom: 32px;
+
+    .film-poster {
+      img {
+        width: 100%;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+    }
+
+    .film-info {
+      h1 {
+        margin-bottom: 8px;
+      }
+
+      // Rating and info section
+      .ant-space-item {
+        .ant-space-vertical {
+          .ant-typography {
+            &.ant-typography-secondary {
+              font-size: 12px;
+              margin-bottom: 4px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .film-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .showtime-finder {
+    .ant-card-head {
+      background: #6d6d6dc0;
+      color: white;
+      border-radius: 12px 12px 0 0;
+
+      .ant-card-head-title {
+        color: white;
+      }
+    }
+  }
+
+  // New Showtimes Tab Styling
+  .showtimes-tab-new {
+    .city-selector {
+      margin-bottom: 24px;
+    }
+
+    // Horizontal Date Selector
+    .date-selector-horizontal {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      position: relative;
+
+      .scroll-btn {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border: 1px solid #d9d9d9;
+        cursor: pointer;
+        z-index: 2;
+
+        &:hover {
+          border-color: #1890ff;
+          color: #1890ff;
+        }
+
+        span {
+          font-size: 18px;
+          font-weight: bold;
+        }
+      }
+
+      .date-buttons-scroll {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        flex: 1;
+        padding: 8px 0;
+
+        // Hide scrollbar
+        &::-webkit-scrollbar {
+          display: none;
+        }
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+
+        .date-button {
+          min-width: 80px;
+          height: auto;
+          padding: 12px 16px;
+          border-radius: 8px;
+          border: 2px solid #d9d9d9;
+          background: white;
+          transition: all 0.3s;
+          flex-shrink: 0;
+
+          &:hover {
+            border-color: #1890ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(24, 144, 255, 0.2);
+          }
+
+          &.active,
+          &.ant-btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+
+            .date-content {
+              .date-day,
+              .date-month,
+              .date-weekday {
+                color: white;
+              }
+            }
+          }
+
+          .date-content {
+            text-align: center;
+
+            .date-day {
+              font-size: 20px;
+              font-weight: bold;
+              color: #1890ff;
+              line-height: 1.2;
+            }
+
+            .date-month {
+              font-size: 11px;
+              color: #999;
+              margin-top: 2px;
+            }
+
+            .date-weekday {
+              font-size: 12px;
+              color: #666;
+              margin-top: 4px;
+              text-transform: capitalize;
+            }
+          }
+        }
+      }
+    }
+
+    // Brand Filter
+    .brand-filter {
+      margin-bottom: 24px;
+      background: white;
+
+      .brand-tabs {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        padding: 8px 0;
+
+        // Hide scrollbar
+        &::-webkit-scrollbar {
+          display: none;
+        }
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+
+        .brand-tab-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 8px;
+          transition: all 0.3s;
+          min-width: 70px;
+
+          &:hover {
+            background: #f5f5f5;
+          }
+
+          &.active {
+            .brand-icon-square {
+              border-color: #1890ff;
+              box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+            }
+
+            span {
+              color: #1890ff;
+              font-weight: 600;
+            }
+          }
+
+          .brand-icon-square {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #e8e8e8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            transition: all 0.3s;
+            overflow: hidden;
+
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+
+            .anticon {
+              color: #1890ff;
+            }
+          }
+
+          span {
+            font-size: 12px;
+            color: #595959;
+            text-align: center;
+            white-space: nowrap;
+            transition: all 0.3s;
+          }
+        }
+      }
+    }
+
+    // Cinema Collapse List
+    .cinema-list-collapse {
+      .cinema-collapse {
+        border: none;
+        background: transparent;
+
+        .ant-collapse-item {
+          margin-bottom: 16px;
+          border: 1px solid #e8e8e8;
+          border-radius: 12px;
+          overflow: hidden;
+          background: white;
+          transition: all 0.3s;
+
+          &:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #1890ff;
+          }
+
+          .ant-collapse-header {
+            padding: 16px 20px;
+            background: white;
+
+            .cinema-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              width: 100%;
+
+              .cinema-name {
+                font-size: 16px;
+                font-weight: 600;
+                color: #262626;
+                margin-bottom: 4px;
+              }
+
+              .cinema-address {
+                font-size: 13px;
+                color: #8c8c8c;
+                line-height: 1.4;
+              }
+
+              .showtime-count {
+                font-size: 14px;
+                white-space: nowrap;
+                margin-left: 16px;
+              }
+            }
+          }
+
+          .ant-collapse-content {
+            border-top: 1px solid #f0f0f0;
+
+            .ant-collapse-content-box {
+              padding: 20px;
+              background: #fafafa;
+            }
+          }
+        }
+      }
+
+      .showtimes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+
+        .showtime-button {
+          height: auto;
+          padding: 12px 16px;
+          border: 2px solid #e8e8e8;
+          border-radius: 8px;
+          background: white;
+          transition: all 0.3s;
+          cursor: pointer;
+
+          &:hover {
+            border-color: #1890ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+
+            .showtime-info {
+              .showtime-time {
+                color: #1890ff;
+              }
+            }
+          }
+
+          .showtime-info {
+            text-align: center;
+
+            .showtime-time {
+              font-size: 18px;
+              font-weight: bold;
+              color: #262626;
+              margin-bottom: 4px;
+            }
+
+            .showtime-end {
+              font-size: 12px;
+              color: #8c8c8c;
+              margin-bottom: 6px;
+            }
+
+            .showtime-seats {
+              font-size: 11px;
+              color: #52c41a;
+              padding: 2px 8px;
+              background: #f6ffed;
+              border-radius: 4px;
+              display: inline-block;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Reviews section styling
+  .reviews-section {
+    .comment-form,
+    .login-prompt {
+      background: #f9f9f9;
+    }
+
+    .comments-list {
+      .comment-item {
+        margin-bottom: 16px;
+        transition: all 0.3s;
+
+        &:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+      }
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .film-header {
+      .film-poster {
+        margin-bottom: 24px;
+      }
+    }
+
+    .showtimes-tab-new {
+      .date-selector-horizontal {
+        .scroll-btn {
+          display: none;
+        }
+
+        .date-buttons-scroll {
+          .date-button {
+            min-width: 70px;
+            padding: 10px 12px;
+
+            .date-content {
+              .date-day {
+                font-size: 18px;
+              }
+
+              .date-month {
+                font-size: 10px;
+              }
+
+              .date-weekday {
+                font-size: 11px;
+              }
+            }
+          }
+        }
+      }
+
+      .brand-filter {
+        padding: 12px 0;
+
+        .brand-tabs {
+          gap: 12px;
+
+          .brand-tab-item {
+            min-width: 60px;
+            padding: 6px;
+
+            .brand-icon-square {
+              width: 45px;
+              height: 45px;
+            }
+
+            span {
+              font-size: 11px;
+            }
+          }
+        }
+      }
+
+      .cinema-list-collapse {
+        .cinema-collapse {
+          .ant-collapse-item {
+            .ant-collapse-header {
+              padding: 12px 16px;
+
+              .cinema-header {
+                flex-direction: column;
+                align-items: flex-start;
+
+                .showtime-count {
+                  margin-left: 0;
+                  margin-top: 8px;
+                }
+              }
+            }
+
+            .ant-collapse-content {
+              .ant-collapse-content-box {
+                padding: 12px;
+              }
+            }
+          }
+        }
+
+        .showtimes-grid {
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          gap: 8px;
+
+          .showtime-button {
+            padding: 10px 12px;
+
+            .showtime-info {
+              .showtime-time {
+                font-size: 16px;
+              }
+
+              .showtime-end {
+                font-size: 11px;
+              }
+
+              .showtime-seats {
+                font-size: 10px;
+                padding: 2px 6px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

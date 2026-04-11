@@ -1,0 +1,260 @@
+// src/components/BookingModal/Booking.scss
+
+.booking-modal {
+  .ant-modal-content {
+    padding: 0;
+  }
+  .ant-modal-header {
+    margin: 0;
+    padding: 16px 24px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+}
+
+.booking-steps-container {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.booking-steps-content {
+  padding: 24px;
+  min-height: 400px;
+  background-color: #f9f9f9;
+}
+
+.booking-steps-action {
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .total-price {
+    font-size: 18px;
+    font-weight: bold;
+    color: #e50914;
+  }
+}
+
+// SeatSelection styles
+.seat-selection-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  overflow-x: auto;
+  padding: 10px;
+
+  .screen {
+    width: 80%;
+    height: 8px;
+    background: linear-gradient(90deg, #ff6b35 0%, #f7931e 100%);
+    border-radius: 4px;
+    position: relative;
+    margin-bottom: 20px;
+
+    &::after {
+      content: "MÀN HÌNH";
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #666;
+      font-weight: bold;
+    }
+  }
+
+  .seat-grid {
+    display: inline-block;
+  }
+
+  .seat-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+
+  .row-label {
+    width: 30px;
+    text-align: center;
+    font-weight: bold;
+    color: #555;
+  }
+
+  .seat {
+    width: 30px;
+    height: 30px;
+    margin: 2px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: white;
+    transition: all 0.2s ease;
+    user-select: none;
+
+    &.standard { background-color: #1890ff; }
+    &.vip { background-color: #faad14; }
+    &.couple { background-color: #eb2f96; }
+
+    &.booked, &.locked {
+      background-color: #bfbfbf;
+      cursor: not-allowed;
+    }
+
+    &.selected {
+      background-color: #52c41a;
+      transform: scale(1.1);
+      box-shadow: 0 0 8px rgba(82, 196, 26, 0.7);
+    }
+
+    &:not(.booked):not(.locked):hover {
+      transform: scale(1.1);
+    }
+  }
+
+  .seat-legend {
+    margin-top: 20px;
+  }
+}
+
+// ComboSelection styles
+.combo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background-color: #fff;
+
+  .combo-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .combo-details {
+      .combo-name {
+        font-weight: bold;
+      }
+      .combo-price {
+        color: #e50914;
+      }
+    }
+  }
+}
+
+// Confirmation styles
+.confirmation-summary {
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+
+    .item-label {
+      color: #888;
+    }
+    .item-value {
+      font-weight: 500;
+      text-align: right;
+    }
+  }
+}
+
+.combo-item-new {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 8px;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .combo-details-new {
+    flex-grow: 1;
+    padding-right: 16px;
+
+    .combo-name-new {
+      font-weight: 600;
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .combo-description-new {
+      font-size: 14px;
+      color: #888;
+      // Ngăn không cho text quá dài
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  }
+
+  .combo-actions-new {
+    display: flex;
+    align-items: center;
+    gap: 24px; // Khoảng cách giữa giá và nút
+
+    .combo-price-new {
+      font-weight: 600;
+      font-size: 16px;
+      color: #111;
+      min-width: 100px; // Giữ chiều rộng cố định để căn chỉnh đẹp
+      text-align: right;
+    }
+
+    .combo-quantity-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .quantity-btn {
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: 1px solid #d9d9d9;
+      }
+
+      .quantity-display {
+        font-weight: bold;
+        font-size: 16px;
+        min-width: 24px;
+        text-align: center;
+      }
+    }
+  }
+}
+
+
+.qr-payment-container {
+  .payment-info {
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px dashed #f0f0f0;
+
+      &:first-child {
+        padding-top: 0;
+      }
+      
+      .ant-typography-code {
+        background-color: #f5f5f5;
+        border: 1px solid #e8e8e8;
+      }
+    }
+  }
+}

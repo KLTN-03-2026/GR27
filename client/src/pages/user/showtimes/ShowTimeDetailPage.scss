@@ -1,0 +1,65 @@
+.cinema-detail-page {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 15px;
+  
+  .cinema-info-header {
+    // MODIFIED: Gộp chung thành một card
+    padding: 24px;
+    background-color:#f0f2f5;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+    margin-bottom: 24px; // Thêm khoảng cách với phần suất chiếu
+  }
+
+  .info-main {
+    display: flex;
+    align-items: flex-start; // Đổi thành flex-start
+    gap: 24px;
+  }
+
+  .cinema-avatar {
+    flex-shrink: 0;
+    margin-top: 30px;
+    border: 2px solid black;
+  }
+
+  .cinema-info-text {
+    .ant-typography {
+      margin-bottom: 8px !important;
+    }
+  }
+  
+  .cinema-address {
+    font-size: 16px;
+  }
+  
+  .cinema-meta {
+      display: flex;
+      flex-wrap: wrap; // Cho phép xuống dòng trên màn hình nhỏ
+      gap: 20px;
+      color: #888;
+      margin-top: 12px;
+      .ant-typography, .map-link {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+      }
+      .map-link {
+          color: #1890ff;
+          font-weight: 500;
+          text-decoration: none;
+          &:hover {
+              text-decoration: underline;
+          }
+      }
+  }
+
+  // Di chuyển style của description vào đây
+  .cinema-description {
+    font-size: 15px;
+    line-height: 1.7;
+    margin-top: 16px;
+    color: #555;
+  }
+}

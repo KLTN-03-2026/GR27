@@ -1,0 +1,53 @@
+.header {
+  display: flex;
+  border-bottom: 1px solid #efefef;
+  background-color: white;
+  padding: 0;
+  &__logoAdmin {
+    width: 250px;
+    padding: 15px 0;
+    display: flex;
+    font-size: 30px;
+    font-weight: 800;
+    color: #0471ff;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid #ddd;
+    transition: all 0.2s;
+    &--collapsed {
+      width: 80px;
+    }
+  }
+  &__nav {
+    display: flex;
+    padding: 0 20px;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    a:last-child {
+      margin-left: 15px;
+    }
+  }
+  &__collapse {
+    cursor: pointer;
+    span {
+      font-size: 27px;
+    }
+  }
+}
+.sider {
+  min-height: 100vh;
+  border: none;
+  border-right: 1px solid #dddddd6a;
+}
+
+
+// .content {
+//   padding: 20px;
+//   background-color: white;
+// }
+
+.content {
+  padding: 20px;
+  background-color: white;
+}

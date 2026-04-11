@@ -1,0 +1,138 @@
+/* src/pages/user/ticket/TicketHistoryListPage.scss */
+
+.ticket-history-page {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 24px;
+
+  .page-header {
+    margin-bottom: 32px;
+  }
+  
+  .filters-card {
+    margin-bottom: 24px;
+  }
+
+  .ticket-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .ticket-card {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .ticket-header {
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f0f0f0;
+
+      .ticket-id {
+        font-weight: 500;
+        background-color: #e6f7ff;
+        border-color: #91d5ff;
+        color: #1890ff;
+      }
+
+      .order-date {
+        font-size: 13px;
+        color: #888;
+      }
+    }
+    
+    .ticket-body {
+      padding: 24px;
+    }
+    
+    .film-info-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    .film-thumbnail {
+      width: 80px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    
+    .film-details {
+      flex: 1;
+
+      .film-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #555;
+        font-size: 14px;
+        margin-bottom: 6px;
+
+        .anticon {
+          color: #888;
+        }
+      }
+    }
+    
+    .combo-info {
+      background-color: #fafafa;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .action-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      min-width: 180px;
+      
+      .total-amount {
+        text-align: right;
+        .amount {
+          font-size: 22px;
+          font-weight: bold;
+          color: #e50914;
+        }
+        .status-text {
+          font-size: 13px;
+          color: #888;
+        }
+      }
+      
+      .action-buttons {
+        margin-top: 12px;
+      }
+    }
+  }
+
+  .pagination-container {
+    margin-top: 32px;
+    text-align: center;
+  }
+}
+
+hidden-ticket-renderer {
+  position: fixed;
+  top: -200vh; // Đẩy ra rất xa khỏi màn hình
+  left: 0;
+  z-index: -100;
+  opacity: 0;
+}

@@ -1,0 +1,33 @@
+.profile-page-container {
+  max-width: 900px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+  border-radius: 10px;
+  margin: 40px auto;
+
+  .ant-card-head-title {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .profile-avatar-section {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 24px;
+
+    .ant-upload-list-item-container, .ant-upload.ant-upload-select {
+        width: 150px !important;
+        height: 150px !important;
+        border-radius: 50% !important;
+    }
+  }
+
+  // MODIFIED: Di chuyển style này từ ProfilePage sang ProfileForm
+  .profile-actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 24px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 24px;
+  }
+}
