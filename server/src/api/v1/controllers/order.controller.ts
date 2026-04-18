@@ -649,7 +649,7 @@ export const checkPaymentStatus = async (
     if (order.transactionId) {
       try {
         const { getPaymentLinkInformation } = await import(
-          "../../../helpers/payos.helper"
+          "../../../helpers/payos.helper.js"
         );
         
         const paymentInfo = await getPaymentLinkInformation(

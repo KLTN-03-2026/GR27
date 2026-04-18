@@ -21,6 +21,18 @@ export const otpLimiterByEmail = rateLimit({
   skipFailedRequests: true, // Không tính những request bị lỗi trước đó (VD: nhập sai định dạng)
 });
 
+// Thêm Limiter cho việc nhập OTP (cho phép 5 lần thử trong 5 phút)
+export const otpVerifyLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 phút
+  max: 5,                  // Cho phép tối đa 5 lần thử
+  keyGenerator: (req: Request): string => req.body.email,
+  standardHeaders: true,
+  message: {
+    code: 429,
+    message: "Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau 5 phút.",
+  },
+});
+
 
 
 
@@ -28,7 +40,7 @@ export const otpLimiterByEmail = rateLimit({
 //[POST] REGISTER: /api/v1/auth/register
 router.post("/register", validateRegister, authController.register);
 //[POST] CHECK EMAIL OTP: /api/v1/auth/register/check-email
-router.post("/register/check-email", otpLimiterByEmail, authController.checkEmailOtp);
+router.post("/register/check-email", otpVerifyLimiter, authController.checkEmailOtp);
 //[POST] CANCEL REGISTER: /api/v1/auth/register/cancel-register
 router.post("/register/cancel-register", authController.cancelRegister);
 
@@ -45,7 +57,7 @@ router.post("/logout", authController.logout);
 //[POST] FORGOT PASSWORD: /api/v1/auth/password/forgot
 router.post("/password/forgot", validateForgotPassword, otpLimiterByEmail, authController.forgotPassword);
 //[POST] CHECK OTP: /api/v1/auth/password/otp
-router.post("/password/otp", authController.otp);
+router.post("/password/otp", otpVerifyLimiter, authController.otp);
 //[POST] RESET PASSWORD: /api/v1/auth/password/reset
 router.post("/password/reset", validateResetPassword, authController.resetPassword);
 

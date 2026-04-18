@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import * as database from "./config/database";
 import mainV1Routes from "./api/v1/routes/index.route";
 import { startOrderCleanupJob } from "./jobs/orderCleanup.job"; // ✅ THÊM MỚI
+import { errorHandler } from "./middlewares/error.middleware";
 
 // Khởi động app và thiết lập port
 const app: Express = express();
@@ -33,8 +34,11 @@ app.use(cookieParser());
 // Liên kết index API
 mainV1Routes(app);
 
-// ✅ THÊM MỚI: Khởi động background jobs
+//  THÊM MỚI: Khởi động background jobs
 startOrderCleanupJob();
+
+//  Global Error Handler — Xử lý lỗi tập trung
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`App listening on port ${port}`);
