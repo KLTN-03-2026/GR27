@@ -44,16 +44,24 @@ const SearchList = () => {
     fetchFilms();
   }, [messageApi]);
 
-  const filteredFilms = useMemo(() => {
-    if (!searchTerm) {
-      return [];
-    }
-    const normalizedSearchTerm = normalizeText(searchTerm);
-    return films.filter(film => {
-      const normalizedTitle = normalizeText(film.title);
-      return normalizedTitle.includes(normalizedSearchTerm);
-    });
-  }, [films, searchTerm]);
+const filteredFilms = useMemo(() => {
+  if (!searchTerm) return [];
+
+  const normalizedSearchTerm = normalizeText(searchTerm);
+
+  return films.filter((film) => {
+    const searchableText = normalizeText([
+      film.title,
+      ...(film.otherTitles || []),
+      ...(film.categoryIds?.map(c => c.title) || []),
+      ...(film.actors || []),
+      ...(film.directors || []),
+      film.description
+    ].join(' '));
+
+    return searchableText.includes(normalizedSearchTerm);
+  });
+}, [films, searchTerm]);
 
   if (loading) {
     return <Loading tip="Đang tìm kiếm..." />;
