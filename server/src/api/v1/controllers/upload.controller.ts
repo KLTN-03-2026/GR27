@@ -1,31 +1,18 @@
- 
- import { Request, Response } from "express";
-import uploadCloudinary from "../../../helpers/uploadCloudinary";
+import { Request, Response } from "express";
+import * as uploadService from "../services/upload.service";
 
- export const index = async (req: Request, res: Response): Promise<void> => {
-  try {
-    console.log(req.body);
-    res.json({
-      location: req.body.file
-    });
-  } catch (error) {
-    console.log('error', error);
+// [GET] /api/v1/upload — dùng cho TinyMCE hiển thị ảnh đã upload
+export const index = (req: Request, res: Response): void => {
+  res.json({ location: req.body.file });
+};
+
+// [POST] /api/v1/upload/image
+export const uploadImage = async (req: Request, res: Response): Promise<void> => {
+  if (!req.file) {
+    res.status(400).json({ code: 400, message: "Không có file được gửi lên" });
+    return;
   }
-}
 
-export const uploadImage = async (req: Request, res: Response) => {
-  try {
-    const file = req.file;
-
-    if (!file) {
-      return res.status(400).json({ error: "No file provided" });
-    }
-
-    const imageUrl = await uploadCloudinary(file.buffer);
-
-    return res.json({ url: imageUrl });
-  } catch (error) {
-    console.error("Upload error:", error);
-    res.status(500).json({ error: "Image upload failed" });
-  }
+  const url = await uploadService.uploadImage(req.file.buffer);
+  res.json({ code: 200, url });
 };
