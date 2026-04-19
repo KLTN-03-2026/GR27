@@ -34,7 +34,7 @@ router.patch(
 );
 
 // [DELETE] DELETE COMMENT (USER - OWN COMMENT or ADMIN): /api/v1/comments/:id
-router.delete("/:id", authMiddleware(UserRole.ADMIN), commentController.remove);
+router.delete("/:id", authMiddleware([UserRole.ADMIN, UserRole.USER]), commentController.remove);
 
 // [PATCH] REPORT COMMENT (USER): /api/v1/comments/:id/report
 router.patch("/:id/report", authMiddleware(UserRole.USER), commentController.report);
