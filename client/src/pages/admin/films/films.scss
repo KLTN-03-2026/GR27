@@ -1,0 +1,29 @@
+// ─── Film Admin Pages ────────────────────────────────────────────────────────
+
+// Shared: Trash page layout
+.trash-page {
+  padding: 20px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  &__title {
+    margin: 0 !important;
+    color: #595959;
+  }
+}
+
+// Film list: dòng pagination + nút thùng rác
+.film-list {
+  &__pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    margin-top: 4px;
+  }
+}

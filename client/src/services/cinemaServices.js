@@ -19,3 +19,16 @@ export const deleteCinema = (id) => del(API_ENDPOINTS.CINEMAS.DELETE(id));
   
 export const updateCinemaStatus = (id, status) =>
   patch(API_ENDPOINTS.CINEMAS.UPDATE(id), { status });
+
+// TRASH //
+export const getTrashCinema = () => {
+  return get(API_ENDPOINTS.CINEMAS.TRASH);
+};
+
+export const restoreCinema = (id) => {
+  return patch(API_ENDPOINTS.CINEMAS.UPDATE(id), { deleted: false });
+};
+
+export const permanentDeleteCinema = (id) => {
+  return del(API_ENDPOINTS.CINEMAS.DELETE_PERMANENT(id));
+};

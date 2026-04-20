@@ -17,11 +17,13 @@ export const API_ENDPOINTS = {
   // Films
   FILMS: {
     LIST: "/films",
+    TRASH: "/films/trash",
     CREATE: "/films",
     DETAIL_BY_ID: (id) => `/films/${id}`, // Admin: GET by ID
     DETAIL_BY_SLUG: (slug) => `/films/slug/${slug}`, // Public: GET by slug
     UPDATE: (id) => `/films/${id}`, // Admin: PATCH
     DELETE: (id) => `/films/${id}`, // Admin: DELETE
+    DELETE_PERMANENT: (id) => `/films/${id}/permanent`, // Xóa vĩnh viễn
     UPLOAD_POSTER: (id) => `/films/${id}/poster`,
   },
 
@@ -37,31 +39,37 @@ export const API_ENDPOINTS = {
   // Cinemas
   CINEMAS: {
     LIST: "/cinemas",
+    TRASH: "/cinemas/trash",
     CREATE: "/cinemas",
     DETAIL_BY_ID: (id) => `/cinemas/${id}`, // Admin: GET by ID
     DETAIL_BY_SLUG: (slug) => `/cinemas/slug/${slug}`, // Public: GET by slug
     UPDATE: (id) => `/cinemas/${id}`,
     DELETE: (id) => `/cinemas/${id}`,
+    DELETE_PERMANENT: (id) => `/cinemas/${id}/permanent`, // Xóa vĩnh viễn
     ROOMS: (id) => `/cinemas/${id}/rooms`,
   },
 
   // Rooms
   ROOMS: {
     LIST: "/rooms",
+    TRASH: "/rooms/trash",
     CREATE: "/rooms",
     DETAIL: (id) => `/rooms/${id}`,
     UPDATE: (id) => `/rooms/${id}`,
     DELETE: (id) => `/rooms/${id}`,
+    DELETE_PERMANENT: (id) => `/rooms/${id}/permanent`,
   },
 
   // Show Times
   SHOW_TIMES: {
     LIST: "/show-times",
+    TRASH: "/show-times/trash",
     CREATE: "/show-times",
     DETAIL_BY_ID: (id) => `/show-times/${id}`,
     DETAIL_BY_SLUG: (slug) => `/show-times/slug/${slug}`,
     UPDATE: (id) => `/show-times/${id}`,
     DELETE: (id) => `/show-times/${id}`,
+    DELETE_PERMANENT: (id) => `/show-times/${id}/permanent`,
     BY_CINEMA: (cinemaId) => `/show-times/cinema/${cinemaId}`,
     BY_FILM: (filmId) => `/show-times/film/${filmId}`,
   },

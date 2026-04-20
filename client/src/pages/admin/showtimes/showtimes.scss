@@ -1,0 +1,9 @@
+// ─── ShowTime Admin Pages ─────────────────────────────────────────────────────
+
+// Dùng cho nút Thùng rác nằm trong showTotal của server-side pagination
+.showtime-list__pagination-total {
+  display: flex;
+  align-items: center;
+  gap: 70vh;
+  
+}

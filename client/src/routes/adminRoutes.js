@@ -4,65 +4,42 @@ import LayoutAdmin from "../layouts/LayoutAdmin";
 import PrivateRoutes from "./PrivateRoutes";
 import Loading from "../components/Loading";
 
-//  Lazy load các component
+// Lazy load các component
 const DashBoardPage = lazy(() => import("../pages/admin/Dashboard"));
+
 const FilmListPage = lazy(() => import("../pages/admin/films/FilmListPage"));
-const FilmCreatePage = lazy(() =>
-  import("../pages/admin/films/FilmCreatePage")
-);
+const FilmCreatePage = lazy(() => import("../pages/admin/films/FilmCreatePage"));
 const FilmEditPage = lazy(() => import("../pages/admin/films/FilmEditPage"));
-const FilmDetailPage = lazy(() =>
-  import("../pages/admin/films/FilmDetailPage")
-);
-const CinemaListPage = lazy(() =>
-  import("../pages/admin/cinemas/CinemaListPage")
-);
-const CinemaDetailPage = lazy(() =>
-  import("../pages/admin/cinemas/CinemaDetailPage")
-);
-const CinemaCreatePage = lazy(() =>
-  import("../pages/admin/cinemas/CinemaCreatePage")
-);
-const CinemaEditPage = lazy(() =>
-  import("../pages/admin/cinemas/CinemaEditPage")
-);
-const RoomCreatePage = lazy(() =>
-  import("../pages/admin/rooms/RoomCreatePage")
-);
-const RoomEditPage = lazy(() => import("../pages/admin/rooms/RoomEditPage"));
-const RoomDetailPage = lazy(() =>
-  import("../pages/admin/rooms/RoomDetailPage")
-);
+const FilmDetailPage = lazy(() => import("../pages/admin/films/FilmDetailPage"));
+const FilmTrashPage = lazy(() => import("../pages/admin/films/FilmTrashPage"));
+
+const CinemaListPage = lazy(() => import("../pages/admin/cinemas/CinemaListPage"));
+const CinemaDetailPage = lazy(() => import("../pages/admin/cinemas/CinemaDetailPage"));
+const CinemaCreatePage = lazy(() => import("../pages/admin/cinemas/CinemaCreatePage"));
+const CinemaEditPage = lazy(() => import("../pages/admin/cinemas/CinemaEditPage"));
+const CinemaTrashPage = lazy(() => import("../pages/admin/cinemas/CinemaTrashPage"));
+
 const RoomListPage = lazy(() => import("../pages/admin/rooms/RoomListPage"));
-const ShowTimeListPage = lazy(() =>
-  import("../pages/admin/showtimes/ShowTimeListPage")
-);
-const ShowTimeCreatePage = lazy(() =>
-  import("../pages/admin/showtimes/ShowTimeCreatePage")
-);
-const ShowTimeEditPage = lazy(() =>
-  import("../pages/admin/showtimes/ShowTimeEditPage")
-);
-const ShowTimeDetailPage = lazy(() =>
-  import("../pages/admin/showtimes/ShowTimeDetailPage")
-);
+const RoomCreatePage = lazy(() => import("../pages/admin/rooms/RoomCreatePage"));
+const RoomEditPage = lazy(() => import("../pages/admin/rooms/RoomEditPage"));
+const RoomDetailPage = lazy(() => import("../pages/admin/rooms/RoomDetailPage"));
+const RoomTrashPage = lazy(() => import("../pages/admin/rooms/RoomTrashPage"));
+
+const ShowTimeListPage = lazy(() => import("../pages/admin/showtimes/ShowTimeListPage"));
+const ShowTimeCreatePage = lazy(() => import("../pages/admin/showtimes/ShowTimeCreatePage"));
+const ShowTimeEditPage = lazy(() => import("../pages/admin/showtimes/ShowTimeEditPage"));
+const ShowTimeDetailPage = lazy(() => import("../pages/admin/showtimes/ShowTimeDetailPage"));
+const ShowTimeTrashPage = lazy(() => import("../pages/admin/showtimes/ShowTimeTrashPage"));
+
 const OrderListPage = lazy(() => import("../pages/admin/orders/OrderListPage"));
+const OrderDetailPage = lazy(() => import("../pages/admin/orders/OrderDetailPage"));
 
-const OrderDetailPage = lazy(() =>
-  import("../pages/admin/orders/OrderDetailPage")
-);
-
-const MemberListPage = lazy(() =>
-  import("../pages/admin/members/MemberListPage")
-);
-
-const MemberDetailPage = lazy(() =>
-  import("../pages/admin/members/MemberDetailPage")
-);
+const MemberListPage = lazy(() => import("../pages/admin/members/MemberListPage"));
+const MemberDetailPage = lazy(() => import("../pages/admin/members/MemberDetailPage"));
 
 const CommentListPage = lazy(() => import("../pages/admin/comments/CommentListPage"));
 
-//  Wrapper component với Suspense
+// Wrapper Suspense
 const LazyWrapper = ({ children }) => (
   <Suspense fallback={<Loading tip="Đang tải trang..." />}>{children}</Suspense>
 );
@@ -82,202 +59,126 @@ const adminRoutes = [
         children: [
           {
             index: true,
-            element: (
-              <LazyWrapper>
-                <DashBoardPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><DashBoardPage /></LazyWrapper>,
           },
           {
             path: "dashboard",
-            element: (
-              <LazyWrapper>
-                <DashBoardPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><DashBoardPage /></LazyWrapper>,
           },
 
-          // Films
+          // ── Films ────────────────────────────────────────────────────────────
           {
             path: "films",
-            element: (
-              <LazyWrapper>
-                <FilmListPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><FilmListPage /></LazyWrapper>,
           },
           {
-            path: "films/:id",
-            element: (
-              <LazyWrapper>
-                <FilmDetailPage />
-              </LazyWrapper>
-            ),
+            path: "films/trash",
+            element: <LazyWrapper><FilmTrashPage /></LazyWrapper>,
           },
           {
             path: "films/create",
-            element: (
-              <LazyWrapper>
-                <FilmCreatePage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><FilmCreatePage /></LazyWrapper>,
           },
           {
             path: "films/edit/:id",
-            element: (
-              <LazyWrapper>
-                <FilmEditPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><FilmEditPage /></LazyWrapper>,
+          },
+          {
+            path: "films/:id",
+            element: <LazyWrapper><FilmDetailPage /></LazyWrapper>,
           },
 
-          // Cinemas
+          // ── Cinemas ──────────────────────────────────────────────────────────
           {
             path: "cinemas",
-            element: (
-              <LazyWrapper>
-                <CinemaListPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><CinemaListPage /></LazyWrapper>,
           },
           {
-            path: "cinemas/:id",
-            element: (
-              <LazyWrapper>
-                <CinemaDetailPage />
-              </LazyWrapper>
-            ),
+            path: "cinemas/trash",
+            element: <LazyWrapper><CinemaTrashPage /></LazyWrapper>,
           },
           {
             path: "cinemas/create",
-            element: (
-              <LazyWrapper>
-                <CinemaCreatePage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><CinemaCreatePage /></LazyWrapper>,
           },
           {
             path: "cinemas/edit/:id",
-            element: (
-              <LazyWrapper>
-                <CinemaEditPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><CinemaEditPage /></LazyWrapper>,
+          },
+          {
+            path: "cinemas/:id",
+            element: <LazyWrapper><CinemaDetailPage /></LazyWrapper>,
           },
 
-          // Rooms
+          // ── Rooms ────────────────────────────────────────────────────────────
+          {
+            path: "rooms",
+            element: <LazyWrapper><RoomListPage /></LazyWrapper>,
+          },
+          {
+            path: "rooms/trash",
+            element: <LazyWrapper><RoomTrashPage /></LazyWrapper>,
+          },
           {
             path: "rooms/create",
-            element: (
-              <LazyWrapper>
-                <RoomCreatePage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><RoomCreatePage /></LazyWrapper>,
           },
           {
             path: "rooms/edit/:id",
-            element: (
-              <LazyWrapper>
-                <RoomEditPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><RoomEditPage /></LazyWrapper>,
           },
           {
             path: "rooms/:id",
-            element: (
-              <LazyWrapper>
-                <RoomDetailPage />
-              </LazyWrapper>
-            ),
-          },
-          {
-            path: "rooms",
-            element: (
-              <LazyWrapper>
-                <RoomListPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><RoomDetailPage /></LazyWrapper>,
           },
 
-          // showtimes
+          // ── Show Times ───────────────────────────────────────────────────────
           {
             path: "show-times",
-            element: (
-              <LazyWrapper>
-                <ShowTimeListPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><ShowTimeListPage /></LazyWrapper>,
+          },
+          {
+            path: "show-times/trash",
+            element: <LazyWrapper><ShowTimeTrashPage /></LazyWrapper>,
           },
           {
             path: "show-times/create",
-            element: (
-              <LazyWrapper>
-                <ShowTimeCreatePage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><ShowTimeCreatePage /></LazyWrapper>,
           },
           {
             path: "show-times/edit/:id",
-            element: (
-              <LazyWrapper>
-                <ShowTimeEditPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><ShowTimeEditPage /></LazyWrapper>,
           },
           {
             path: "show-times/:id",
-            element: (
-              <LazyWrapper>
-                <ShowTimeDetailPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><ShowTimeDetailPage /></LazyWrapper>,
           },
 
-          //orders
+          // ── Orders ───────────────────────────────────────────────────────────
           {
             path: "orders",
-            element: (
-              <LazyWrapper>
-                <OrderListPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><OrderListPage /></LazyWrapper>,
           },
           {
             path: "orders/:id",
-            element: (
-              <LazyWrapper>
-                <OrderDetailPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><OrderDetailPage /></LazyWrapper>,
           },
 
-          // members
+          // ── Members ──────────────────────────────────────────────────────────
           {
             path: "members",
-            element: (
-              <LazyWrapper>
-                <MemberListPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><MemberListPage /></LazyWrapper>,
           },
           {
             path: "members/:id",
-            element: (
-              <LazyWrapper>
-                <MemberDetailPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><MemberDetailPage /></LazyWrapper>,
           },
-          // comments
+
+          // ── Comments ─────────────────────────────────────────────────────────
           {
             path: "comments",
-            element: (
-              <LazyWrapper>
-                <CommentListPage />
-              </LazyWrapper>
-            ),
+            element: <LazyWrapper><CommentListPage /></LazyWrapper>,
           },
-         
         ],
       },
     ],

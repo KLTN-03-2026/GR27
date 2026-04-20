@@ -1,0 +1,12 @@
+// ─── Room Admin Pages ─────────────────────────────────────────────────────────
+
+// Dòng pagination + nút Thùng rác
+.room-list {
+  &__pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    margin-top: 4px;
+  }
+}

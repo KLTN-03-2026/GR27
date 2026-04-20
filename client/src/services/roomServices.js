@@ -13,3 +13,16 @@ export const deleteRoom = (id) => del(API_ENDPOINTS.ROOMS.DELETE(id));
 
 export const updateRoomStatus = (id, status) =>
   patch(API_ENDPOINTS.ROOMS.UPDATE(id), { status });
+
+// TRASH //
+export const getTrashRooms = () => {
+  return get(API_ENDPOINTS.ROOMS.TRASH);
+};
+
+export const restoreRoom = (id) => {
+  return patch(API_ENDPOINTS.ROOMS.UPDATE(id), { deleted: false });
+};
+
+export const permanentDeleteRoom = (id) => {
+  return del(API_ENDPOINTS.ROOMS.DELETE_PERMANENT(id));
+};

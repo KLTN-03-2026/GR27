@@ -27,9 +27,7 @@ import {
 } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
-import {
-  deleteShowTime,
-} from "../../../services/showTimeServices";
+import { deleteShowTime } from "../../../services/showTimeServices";
 import { getAllFilms } from "../../../services/filmServices";
 import { getAllCity } from "../../../services/cityServices";
 import { getAllCinema } from "../../../services/cinemaServices";
@@ -37,6 +35,7 @@ import { getAllRooms } from "../../../services/roomServices";
 import getColumnSearchProps from "../../../helpers/getColumnSearchProps";
 import Loading from "../../../components/Loading";
 import ErrorDisplay from "../../../components/ErrorDisplay";
+import "./showtimes.scss";
 
 const { RangePicker } = DatePicker;
 
@@ -52,7 +51,7 @@ const ShowTimeListPage = () => {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
 
-  // Pagination states
+  // Server-side pagination state
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -72,144 +71,127 @@ const ShowTimeListPage = () => {
   const [searchedColumn, setSearchedColumn] = useState("");
   const searchInput = useRef(null);
 
-  // Fetch reference data (films, cities, cinemas, rooms)
+  // ─── Fetch reference data ────────────────────────────────────────────────────
   useEffect(() => {
     const fetchReferenceData = async () => {
       try {
-        const [filmResult, cityResult, cinemaResult, roomResult] = await Promise.all([
-          getAllFilms(),
-          getAllCity(),
-          getAllCinema(),
-          getAllRooms(),
-        ]);
-
+        const [filmResult, cityResult, cinemaResult, roomResult] =
+          await Promise.all([
+            getAllFilms(),
+            getAllCity(),
+            getAllCinema(),
+            getAllRooms(),
+          ]);
         setFilms(filmResult.data || []);
         setCities(cityResult || []);
         setCinemas(cinemaResult || []);
         setRooms(roomResult.data || []);
-        
       } catch (err) {
         console.error("Error fetching reference data:", err);
       }
     };
-
     fetchReferenceData();
   }, []);
 
-  // Fetch showtimes with filters
-  const fetchShowTimes = useCallback(async (page = 1) => {
-    try {
-      setLoading(true);
-      setError(null);
+  // ─── Fetch showtimes (server-side pagination) ────────────────────────────────
+  const fetchShowTimes = useCallback(
+    async (page = 1) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Build query params
-      const params = new URLSearchParams();
-      params.append("page", page.toString());
-
-      if (selectedFilmId) params.append("filmId", selectedFilmId);
-      if (selectedCinemaId) params.append("cinemaId", selectedCinemaId);
-      if (selectedRoomId) params.append("roomId", selectedRoomId);
-      if (selectedStatus) params.append("status", selectedStatus);
-      
-      if (dateRange && dateRange[0] && dateRange[1]) {
-        params.append("startDate", dateRange[0].format("YYYY-MM-DD"));
-        params.append("endDate", dateRange[1].format("YYYY-MM-DD"));
-      }
-
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/show-times?${params.toString()}`,
-        {
-          credentials: "include",
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        if (selectedFilmId) params.append("filmId", selectedFilmId);
+        if (selectedCinemaId) params.append("cinemaId", selectedCinemaId);
+        if (selectedRoomId) params.append("roomId", selectedRoomId);
+        if (selectedStatus) params.append("status", selectedStatus);
+        if (dateRange && dateRange[0] && dateRange[1]) {
+          params.append("startDate", dateRange[0].format("YYYY-MM-DD"));
+          params.append("endDate", dateRange[1].format("YYYY-MM-DD"));
         }
-      );
 
-      const result = await response.json();
-      
-      if (result.code === 200) {
-        setShowTimes(result.data || []);
-        setPagination({
-          current: result.pagination.page,
-          pageSize: result.pagination.limit,
-          total: result.pagination.total,
-        });
-      } else {
-        throw new Error(result.message);
+        const response = await fetch(
+          `${process.env.REACT_APP_API_BASE_URL}/show-times?${params.toString()}`,
+          { credentials: "include" }
+        );
+        const result = await response.json();
+
+        if (result.code === 200) {
+          setShowTimes(result.data || []);
+          setPagination({
+            current: result.pagination.page,
+            pageSize: result.pagination.limit,
+            total: result.pagination.total,
+          });
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (err) {
+        console.error("Error fetching showtimes:", err);
+        setError(err.message || "Không thể tải danh sách suất chiếu");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error fetching showtimes:", err);
-      setError(err.message || "Không thể tải danh sách suất chiếu");
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedFilmId, selectedCinemaId, selectedRoomId, selectedStatus, dateRange]);
+    },
+    [selectedFilmId, selectedCinemaId, selectedRoomId, selectedStatus, dateRange]
+  );
 
-  // Initial fetch
   useEffect(() => {
     fetchShowTimes(1);
   }, [fetchShowTimes]);
 
-  // Build cinema tree structure for TreeSelect
+  // ─── Helpers ────────────────────────────────────────────────────────────────
   const buildCinemaTree = (cinemasList) => {
-    const parentCinemas = cinemasList.filter(cinema => !cinema.parentId);
-    const childCinemas = cinemasList.filter(cinema => cinema.parentId);
-
-    const treeData = parentCinemas.map(parent => ({
+    const parentCinemas = cinemasList.filter((cinema) => !cinema.parentId);
+    const childCinemas = cinemasList.filter((cinema) => cinema.parentId);
+    return parentCinemas.map((parent) => ({
       title: parent.name,
       value: parent._id,
       key: parent._id,
       children: childCinemas
-        .filter(child => {
-          const parentIdValue = typeof child.parentId === 'object' 
-            ? child.parentId._id 
-            : child.parentId;
+        .filter((child) => {
+          const parentIdValue =
+            typeof child.parentId === "object"
+              ? child.parentId._id
+              : child.parentId;
           return parentIdValue === parent._id;
         })
-        .map(child => ({
+        .map((child) => ({
           title: `└─ ${child.name}`,
           value: child._id,
           key: child._id,
-        }))
+        })),
     }));
-
-    return treeData;
   };
 
-  // Get cinemas filtered by selected city
   const getFilteredCinemaTree = () => {
-    if (!selectedCityId) {
-      return buildCinemaTree(cinemas);
-    }
-
-    const filtered = cinemas.filter(cinema => {
+    if (!selectedCityId) return buildCinemaTree(cinemas);
+    const filtered = cinemas.filter((cinema) => {
       if (!cinema.cityIds) return false;
-      
-      return cinema.cityIds.some(cityId => {
-        const cityIdValue = typeof cityId === 'object' ? cityId._id : cityId;
+      return cinema.cityIds.some((cityId) => {
+        const cityIdValue =
+          typeof cityId === "object" ? cityId._id : cityId;
         return cityIdValue === selectedCityId;
       });
     });
-
     return buildCinemaTree(filtered);
   };
 
-  // Get rooms filtered by selected cinema
   const getFilteredRooms = () => {
     if (!selectedCinemaId) return [];
-
     return rooms
-      .filter(room => {
-        const roomCinemaId = typeof room.cinemaId === 'object'
-          ? room.cinemaId._id
-          : room.cinemaId;
+      .filter((room) => {
+        const roomCinemaId =
+          typeof room.cinemaId === "object"
+            ? room.cinemaId._id
+            : room.cinemaId;
         return roomCinemaId === selectedCinemaId;
       })
-      .map(room => ({
-        label: room.name,
-        value: room._id,
-      }));
+      .map((room) => ({ label: room.name, value: room._id }));
   };
 
-  // Reset all filters
+  // ─── Handlers ───────────────────────────────────────────────────────────────
   const handleResetFilters = () => {
     setSelectedFilmId(null);
     setSelectedCityId(null);
@@ -219,29 +201,22 @@ const ShowTimeListPage = () => {
     setDateRange(null);
   };
 
-  // Handle city change
   const handleCityChange = (value) => {
     setSelectedCityId(value);
     setSelectedCinemaId(null);
     setSelectedRoomId(null);
   };
 
-  // Handle cinema change
   const handleCinemaChange = (value) => {
     setSelectedCinemaId(value);
     setSelectedRoomId(null);
   };
 
-  // Handle delete showtime
   const handleDelete = async (showtimeId) => {
     try {
       setActionLoading((prev) => ({ ...prev, [`delete_${showtimeId}`]: true }));
-
       await deleteShowTime(showtimeId);
-
       messageApi.success("Xóa suất chiếu thành công");
-      
-      // Refresh data
       fetchShowTimes(pagination.current);
     } catch (err) {
       console.error("Error deleting showtime:", err);
@@ -249,30 +224,27 @@ const ShowTimeListPage = () => {
         err.response?.data?.message || "Không thể xóa suất chiếu"
       );
     } finally {
-      setActionLoading((prev) => ({ ...prev, [`delete_${showtimeId}`]: false }));
+      setActionLoading((prev) => ({
+        ...prev,
+        [`delete_${showtimeId}`]: false,
+      }));
     }
   };
 
-  // Handle table change (pagination, sorting)
-  const handleTableChange = (newPagination, filters, sorter) => {
+  const handleTableChange = (newPagination) => {
     fetchShowTimes(newPagination.current);
   };
 
-  // Render status tag
+  // ─── Render helpers ─────────────────────────────────────────────────────────
   const renderStatusTag = (status) => {
-    const statusConfig = {
-      active: {
-        color: "green",
-        text: "Hoạt động",
-        icon: <CheckCircleOutlined />,
-      },
-      inactive: {
-        color: "red",
-        text: "Ngưng hoạt động",
-        icon: <CloseCircleOutlined />,
-      },
-    };
-    const config = statusConfig[status] || statusConfig.inactive;
+    const config =
+      status === "active"
+        ? { color: "green", text: "Hoạt động", icon: <CheckCircleOutlined /> }
+        : {
+            color: "red",
+            text: "Ngưng hoạt động",
+            icon: <CloseCircleOutlined />,
+          };
     return (
       <Tag color={config.color} icon={config.icon}>
         {config.text}
@@ -280,25 +252,22 @@ const ShowTimeListPage = () => {
     );
   };
 
-  // Render film info
   const renderFilmInfo = (filmId) => {
     if (!filmId) return "N/A";
-    return typeof filmId === 'object' ? filmId.title : filmId;
+    return typeof filmId === "object" ? filmId.title : filmId;
   };
 
-  // Render cinema info
   const renderCinemaInfo = (cinemaId) => {
     if (!cinemaId) return "N/A";
-    return typeof cinemaId === 'object' ? cinemaId.name : cinemaId;
+    return typeof cinemaId === "object" ? cinemaId.name : cinemaId;
   };
 
-  // Render room info
   const renderRoomInfo = (roomId) => {
     if (!roomId) return "N/A";
-    return typeof roomId === 'object' ? roomId.name : roomId;
+    return typeof roomId === "object" ? roomId.name : roomId;
   };
 
-  // Table columns
+  // ─── Columns ────────────────────────────────────────────────────────────────
   const columns = [
     {
       title: "Tên phim",
@@ -331,16 +300,21 @@ const ShowTimeListPage = () => {
       align: "center",
       render: (_, record) => (
         <div>
-          <div style={{ 
-            fontWeight: "bold", 
-            fontSize: "14px",
-            marginBottom: "4px",
-            color: "#1890ff"
-          }}>
-            <ClockCircleOutlined /> {dayjs(record.startTime).format("HH:mm")} - {dayjs(record.endTime).format("HH:mm")}
+          <div
+            style={{
+              fontWeight: "bold",
+              fontSize: "14px",
+              marginBottom: "4px",
+              color: "#1890ff",
+            }}
+          >
+            <ClockCircleOutlined />{" "}
+            {dayjs(record.startTime).format("HH:mm")} -{" "}
+            {dayjs(record.endTime).format("HH:mm")}
           </div>
           <div style={{ fontSize: "12px", color: "#666" }}>
-            <CalendarOutlined /> {dayjs(record.startTime).format("DD/MM/YYYY")}
+            <CalendarOutlined />{" "}
+            {dayjs(record.startTime).format("DD/MM/YYYY")}
           </div>
         </div>
       ),
@@ -367,7 +341,7 @@ const ShowTimeListPage = () => {
       width: 100,
       align: "center",
       render: (format) => (
-        <Tag color="cyan" style={{ fontSize: '13px' }}>
+        <Tag color="cyan" style={{ fontSize: "13px" }}>
           {format}
         </Tag>
       ),
@@ -379,7 +353,7 @@ const ShowTimeListPage = () => {
       align: "center",
       sorter: true,
       render: (_, record) => (
-        <Tag color="blue" style={{ fontSize: '14px', fontWeight: 'bold' }}>
+        <Tag color="blue" style={{ fontSize: "14px", fontWeight: "bold" }}>
           {record.seats?.length || 0}
         </Tag>
       ),
@@ -409,7 +383,6 @@ const ShowTimeListPage = () => {
               onClick={() => navigate(`/admin/show-times/${record._id}`)}
             />
           </Tooltip>
-
           <Tooltip title="Chỉnh sửa">
             <Button
               type="default"
@@ -418,7 +391,6 @@ const ShowTimeListPage = () => {
               onClick={() => navigate(`/admin/show-times/edit/${record._id}`)}
             />
           </Tooltip>
-
           <Tooltip title="Xóa">
             <Popconfirm
               title="Xác nhận xóa"
@@ -442,6 +414,7 @@ const ShowTimeListPage = () => {
     },
   ];
 
+  // ─── Render ─────────────────────────────────────────────────────────────────
   if (loading && pagination.current === 1) {
     return <Loading tip="Đang tải danh sách suất chiếu..." />;
   }
@@ -454,7 +427,7 @@ const ShowTimeListPage = () => {
     <>
       {contextHolder}
       <div style={{ padding: "20px" }}>
-        {/* Header with button */}
+        {/* Header */}
         <Card style={{ marginBottom: "20px" }}>
           <Row gutter={[16, 16]} align="middle">
             <Col>
@@ -489,11 +462,8 @@ const ShowTimeListPage = () => {
                 value={selectedFilmId}
                 onChange={setSelectedFilmId}
                 options={films
-                  .filter(film => film.status === "active")
-                  .map((film) => ({
-                    label: film.title,
-                    value: film._id,
-                  }))}
+                  .filter((film) => film.status === "active")
+                  .map((film) => ({ label: film.title, value: film._id }))}
               />
             </Col>
 
@@ -538,7 +508,7 @@ const ShowTimeListPage = () => {
                 value={selectedCinemaId}
                 onChange={handleCinemaChange}
                 disabled={!selectedCityId}
-                dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
+                dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
                 notFoundContent={
                   !selectedCityId
                     ? "Vui lòng chọn thành phố trước"
@@ -599,8 +569,15 @@ const ShowTimeListPage = () => {
           </Row>
         </Card>
 
-        {/* Table */}
-        <Card>
+        {/* Table
+            ShowTimeListPage dùng server-side pagination thực sự (fetch API theo từng page)
+            → Không thể tắt built-in pagination. Dùng showTotal để render nút Thùng rác
+            vào slot bên trái thông qua flex wrapper trên .ant-table-pagination.
+        */}
+        <Card
+       
+        
+        >
           <Table
             columns={columns}
             dataSource={showTimes}
@@ -610,8 +587,22 @@ const ShowTimeListPage = () => {
               ...pagination,
               showSizeChanger: false,
               showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} của ${total} suất chiếu`,
+              size: "small",
+              showTotal: (total, range) => (
+                <div className="showtime-list__pagination-total">
+                  <Button
+                    icon={<DeleteOutlined />}
+                    danger
+                    
+                    onClick={() => navigate("/admin/show-times/trash")}
+                  >
+                    Thùng rác
+                  </Button>
+                  <span>
+                    {range[0]}-{range[1]} của {total} suất chiếu
+                  </span>
+                </div>
+              ),
             }}
             onChange={handleTableChange}
             scroll={{ x: 1200 }}

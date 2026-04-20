@@ -11,6 +11,7 @@ import {
   Col,
   Select,
   Card,
+  Pagination,
 } from "antd";
 import {
   EyeOutlined,
@@ -33,6 +34,7 @@ import { getAllCity } from "../../../services/cityServices";
 import getColumnSearchProps from "../../../helpers/getColumnSearchProps";
 import Loading from "../../../components/Loading";
 import ErrorDisplay from "../../../components/ErrorDisplay";
+import "./cinemas.scss";
 
 const CinemaListPage = () => {
   const navigate = useNavigate();
@@ -49,12 +51,16 @@ const CinemaListPage = () => {
   const [selectedParents, setSelectedParents] = useState([]);
   const [showParentOnly, setShowParentOnly] = useState(false);
 
+  // Custom pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   // Search states
   const [searchText, setSearchText] = useState("");
   const [searchedColumn, setSearchedColumn] = useState("");
   const searchInput = useRef(null);
 
-  // Fetch data
+  // ─── Fetch ──────────────────────────────────────────────────────────────────
   const fetchCinemas = async () => {
     try {
       setLoading(true);
@@ -63,10 +69,6 @@ const CinemaListPage = () => {
         getAllCinema(),
         getAllCity(),
       ]);
-
-      console.log("Cinema result:", cinemaResult);
-      console.log("City result:", cityResult);
-
       setCinemas(cinemaResult.reverse() || []);
       setFilteredCinemas(cinemaResult.reverse() || []);
       setCities(cityResult || []);
@@ -84,19 +86,16 @@ const CinemaListPage = () => {
     fetchCinemas();
   }, []);
 
-  // Filter cinemas based on city, parent, and show parent only
+  // ─── Filter effect ───────────────────────────────────────────────────────────
   useEffect(() => {
     let filtered = [...cinemas];
 
-    // Show parent only filter
     if (showParentOnly) {
       filtered = filtered.filter((cinema) => !cinema.parentId);
     } else {
-      // Show only child cinemas (has parentId)
       filtered = filtered.filter((cinema) => cinema.parentId);
     }
 
-    // Filter by cities (multi-select)
     if (selectedCities.length > 0) {
       filtered = filtered.filter((cinema) => {
         if (Array.isArray(cinema.cityIds)) {
@@ -110,7 +109,6 @@ const CinemaListPage = () => {
       });
     }
 
-    // Filter by parent cinemas (multi-select)
     if (selectedParents.length > 0) {
       filtered = filtered.filter((cinema) => {
         const parentId =
@@ -122,32 +120,25 @@ const CinemaListPage = () => {
     }
 
     setFilteredCinemas(filtered);
+    setCurrentPage(1); // Reset về trang 1 khi filter thay đổi
   }, [cinemas, selectedCities, selectedParents, showParentOnly]);
 
-  // Handle status toggle
+  // ─── Handlers ───────────────────────────────────────────────────────────────
   const handleStatusToggle = async (cinema) => {
     const cinemaId = cinema._id;
     const newStatus = cinema.status === "active" ? "inactive" : "active";
-
     try {
       setActionLoading((prev) => ({ ...prev, [`status_${cinemaId}`]: true }));
-
       await updateCinemaStatus(cinemaId, newStatus);
-
-      // Update local state
       setCinemas((prev) =>
         prev.map((item) =>
           item._id === cinemaId ? { ...item, status: newStatus } : item
         )
       );
-
       messageApi.success(
-        `Đã ${
-          newStatus === "active" ? "kích hoạt" : "vô hiệu hóa"
-        } rạp thành công`
+        `Đã ${newStatus === "active" ? "kích hoạt" : "vô hiệu hóa"} rạp thành công`
       );
     } catch (err) {
-      console.error("Error updating status:", err);
       messageApi.error(
         err.response?.data?.message || "Không thể cập nhật trạng thái"
       );
@@ -156,19 +147,13 @@ const CinemaListPage = () => {
     }
   };
 
-  // Handle delete cinema
   const handleDelete = async (cinemaId) => {
     try {
       setActionLoading((prev) => ({ ...prev, [`delete_${cinemaId}`]: true }));
-
       await deleteCinema(cinemaId);
-
-      // Remove from local state
       setCinemas((prev) => prev.filter((item) => item._id !== cinemaId));
-
       messageApi.success("Xóa rạp chiếu thành công");
     } catch (err) {
-      console.error("Error deleting cinema:", err);
       messageApi.error(
         err.response?.data?.message || "Không thể xóa rạp chiếu"
       );
@@ -177,11 +162,9 @@ const CinemaListPage = () => {
     }
   };
 
-  // Get parent cinemas for filter dropdown
+  // ─── Helpers ────────────────────────────────────────────────────────────────
   const getParentCinemas = () => {
     let parentCinemas = cinemas.filter((cinema) => !cinema.parentId);
-
-    // If cities are selected, filter parent cinemas by those cities
     if (selectedCities.length > 0) {
       parentCinemas = parentCinemas.filter((cinema) => {
         if (Array.isArray(cinema.cityIds)) {
@@ -194,14 +177,12 @@ const CinemaListPage = () => {
         return false;
       });
     }
-
     return parentCinemas.map((cinema) => ({
       label: cinema.name,
       value: cinema._id,
     }));
   };
 
-  // Render status tag
   const renderStatusTag = (status, record) => {
     const statusConfig = {
       active: {
@@ -216,7 +197,6 @@ const CinemaListPage = () => {
       },
     };
     const config = statusConfig[status] || statusConfig.inactive;
-
     return (
       <Tag
         color={config.color}
@@ -224,21 +204,17 @@ const CinemaListPage = () => {
         style={{ cursor: "pointer" }}
         onClick={() => handleStatusToggle(record)}
       >
-        {actionLoading[`status_${record._id}`]
-          ? "Đang cập nhật..."
-          : config.text}
+        {actionLoading[`status_${record._id}`] ? "Đang cập nhật..." : config.text}
       </Tag>
     );
   };
 
-  // Render cities
   const renderCities = (cityIds) => {
     if (!Array.isArray(cityIds) || cityIds.length === 0) return "Chưa cập nhật";
-
     return (
       <Space wrap>
-        {cityIds.map((city, index) => (
-          <Tag key={index} color="blue" icon={<EnvironmentOutlined />}>
+        {cityIds.map((city, idx) => (
+          <Tag key={idx} color="blue" icon={<EnvironmentOutlined />}>
             {typeof city === "object" ? city.name : city}
           </Tag>
         ))}
@@ -246,16 +222,12 @@ const CinemaListPage = () => {
     );
   };
 
-  // Render parent cinema
   const renderParentCinema = (parentId) => {
-    if (!parentId) {
-      return "Rạp gốc";
-    }
-
+    if (!parentId) return "Rạp gốc";
     return typeof parentId === "object" ? parentId.name : "Rạp cha";
   };
 
-  // Table columns
+  // ─── Columns ────────────────────────────────────────────────────────────────
   const columns = [
     {
       title: "Tên rạp",
@@ -272,8 +244,8 @@ const CinemaListPage = () => {
       ),
       render: (name, record) => (
         <div>
-          <div style={{ fontWeight: "bold", marginBottom: "4px" }}>{name}</div>
-          <div style={{ fontSize: "12px", color: "#666" }}>
+          <div style={{ fontWeight: "bold", marginBottom: 4 }}>{name}</div>
+          <div style={{ fontSize: 12, color: "#666" }}>
             ID: {record._id.slice(-8)}
           </div>
         </div>
@@ -298,7 +270,7 @@ const CinemaListPage = () => {
       key: "time",
       width: 160,
       render: (_, record) => (
-        <div style={{ fontSize: "12px" }}>
+        <div style={{ fontSize: 12 }}>
           <div>
             <strong>Tạo:</strong> {dayjs(record.createdAt).format("DD/MM/YYYY")}
           </div>
@@ -316,14 +288,8 @@ const CinemaListPage = () => {
       width: 140,
       align: "center",
       filters: [
-        {
-          text: "Hoạt động",
-          value: "active",
-        },
-        {
-          text: "Ngưng hoạt động",
-          value: "inactive",
-        }
+        { text: "Hoạt động", value: "active" },
+        { text: "Ngưng hoạt động", value: "inactive" },
       ],
       onFilter: (value, record) => record.status === value,
       render: renderStatusTag,
@@ -343,7 +309,6 @@ const CinemaListPage = () => {
               onClick={() => navigate(`/admin/cinemas/${record._id}`)}
             />
           </Tooltip>
-
           <Tooltip title="Chỉnh sửa">
             <Button
               type="default"
@@ -352,7 +317,6 @@ const CinemaListPage = () => {
               onClick={() => navigate(`/admin/cinemas/edit/${record._id}`)}
             />
           </Tooltip>
-
           <Tooltip title="Xóa">
             <Popconfirm
               title="Xác nhận xóa"
@@ -376,22 +340,31 @@ const CinemaListPage = () => {
     },
   ];
 
+  // ─── Render ─────────────────────────────────────────────────────────────────
   if (loading) return <Loading tip="Đang tải danh sách rạp chiếu..." />;
+  if (error) return <ErrorDisplay message={error} onRetry={fetchCinemas} />;
 
-  if (error) {
-    return <ErrorDisplay message={error} onRetry={fetchCinemas} />;
-  }
+  // Tính dữ liệu trang hiện tại
+  const pagedData = filteredCinemas.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <>
       {contextHolder}
       <div style={{ padding: "20px" }}>
         {/* Header with filters */}
-        <Card style={{ marginBottom: "20px" }}>
+        <Card style={{ marginBottom: 20 }}>
           <Row gutter={[16, 16]} align="middle">
             <Col>
               <Link to="/admin/cinemas/create">
-                <Button color="primary" variant="outlined" icon={<PlusOutlined />} size="large">
+                <Button
+                  color="primary"
+                  variant="outlined"
+                  icon={<PlusOutlined />}
+                  size="large"
+                >
                   Tạo rạp chiếu mới
                 </Button>
               </Link>
@@ -414,7 +387,6 @@ const CinemaListPage = () => {
                     value={selectedCities}
                     onChange={(values) => {
                       setSelectedCities(values);
-                      // Reset parent filter when cities change
                       setSelectedParents([]);
                     }}
                     options={cities.map((city) => ({
@@ -423,7 +395,6 @@ const CinemaListPage = () => {
                     }))}
                   />
                 </Col>
-
                 <Col>
                   <Select
                     mode="multiple"
@@ -448,7 +419,6 @@ const CinemaListPage = () => {
                     }
                   />
                 </Col>
-
                 <Col>
                   <Button
                     type={showParentOnly ? "primary" : "default"}
@@ -467,30 +437,51 @@ const CinemaListPage = () => {
         <Card>
           <Table
             columns={columns}
-            dataSource={filteredCinemas}
+            dataSource={pagedData}
             rowKey="_id"
-            pagination={{
-              total: filteredCinemas.length,
-              pageSize: 10,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} của ${total} rạp chiếu`,
-              pageSizeOptions: ["10", "20", "50", "100"],
-            }}
+            pagination={false}
             scroll={{ x: 1200 }}
             size="middle"
-            style={{ background: "#fff", borderRadius: "8px" }}
+            style={{ background: "#fff", borderRadius: 8 }}
             locale={{
-              emptyText: showParentOnly
-                ? "Không có rạp cha nào phù hợp với bộ lọc"
-                : selectedCities.length > 0 ||
-                  selectedParents.length > 0 ||
-                  searchText
-                ? "Không tìm thấy rạp chiếu phù hợp với bộ lọc"
-                : "Chưa có rạp chiếu nào",
+              emptyText:
+                showParentOnly
+                  ? "Không có rạp cha nào phù hợp với bộ lọc"
+                  : selectedCities.length > 0 ||
+                    selectedParents.length > 0 ||
+                    searchText
+                  ? "Không tìm thấy rạp chiếu phù hợp với bộ lọc"
+                  : "Chưa có rạp chiếu nào",
             }}
           />
+
+          {/* Dòng cuối: Thùng rác (trái) | Pagination (phải) */}
+          <div className="cinema-list__pagination-row">
+            <Button
+              icon={<DeleteOutlined />}
+              danger
+              onClick={() => navigate("/admin/cinemas/trash")}
+            >
+              Thùng rác
+            </Button>
+
+            <Pagination
+              current={currentPage}
+              pageSize={pageSize}
+              total={filteredCinemas.length}
+              showSizeChanger
+              
+              showQuickJumper
+              showTotal={(total, range) =>
+                `${range[0]}-${range[1]} của ${total} rạp chiếu`
+              }
+              pageSizeOptions={["10", "20", "50", "100"]}
+              onChange={(page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              }}
+            />
+          </div>
         </Card>
       </div>
     </>

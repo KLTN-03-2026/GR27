@@ -12,6 +12,7 @@ import {
   Select,
   Card,
   TreeSelect,
+  Pagination,
 } from "antd";
 import {
   EyeOutlined,
@@ -34,6 +35,7 @@ import { getAllCinema } from "../../../services/cinemaServices";
 import getColumnSearchProps from "../../../helpers/getColumnSearchProps";
 import Loading from "../../../components/Loading";
 import ErrorDisplay from "../../../components/ErrorDisplay";
+import "./rooms.scss";
 
 const RoomListPage = () => {
   const navigate = useNavigate();
@@ -51,12 +53,16 @@ const RoomListPage = () => {
   const [selectedCinemas, setSelectedCinemas] = useState([]);
   const [selectedFormats, setSelectedFormats] = useState([]);
 
+  // Pagination state (FE tự xử lý)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   // Search states
   const [searchText, setSearchText] = useState("");
   const [searchedColumn, setSearchedColumn] = useState("");
   const searchInput = useRef(null);
 
-  // Fetch data
+  // ─── Fetch ──────────────────────────────────────────────────────────────────
   const fetchRooms = async () => {
     try {
       setLoading(true);
@@ -66,8 +72,6 @@ const RoomListPage = () => {
         getAllCity(),
         getAllCinema(),
       ]);
-
-      console.log("Room result:", roomResult);
 
       setRooms(roomResult.data.reverse() || []);
       setFilteredRooms(roomResult.data.reverse() || []);
@@ -87,84 +91,75 @@ const RoomListPage = () => {
     fetchRooms();
   }, []);
 
-  // Filter rooms based on selected filters
+  // ─── Filter effect ───────────────────────────────────────────────────────────
   useEffect(() => {
     let filtered = [...rooms];
 
-    // Filter by cities
     if (selectedCities.length > 0) {
       filtered = filtered.filter((room) => {
         if (!room.cinemaId || !room.cinemaId.cityIds) return false;
-        
-        const cinemaCityIds = room.cinemaId.cityIds.map(city => 
-          typeof city === 'object' ? city._id : city
+        const cinemaCityIds = room.cinemaId.cityIds.map((city) =>
+          typeof city === "object" ? city._id : city
         );
-        
-        return cinemaCityIds.some(cityId => selectedCities.includes(cityId));
+        return cinemaCityIds.some((cityId) => selectedCities.includes(cityId));
       });
     }
 
-    // Filter by cinemas (cả rạp cha và rạp con)
     if (selectedCinemas.length > 0) {
       filtered = filtered.filter((room) => {
-        const cinemaId = typeof room.cinemaId === 'object' 
-          ? room.cinemaId._id 
-          : room.cinemaId;
+        const cinemaId =
+          typeof room.cinemaId === "object" ? room.cinemaId._id : room.cinemaId;
         return selectedCinemas.includes(cinemaId);
       });
     }
 
-    // Filter by formats
     if (selectedFormats.length > 0) {
       filtered = filtered.filter((room) => {
-        if (!room.supportedFormats || room.supportedFormats.length === 0) return false;
-        
-        return room.supportedFormats.some(format => 
+        if (!room.supportedFormats || room.supportedFormats.length === 0)
+          return false;
+        return room.supportedFormats.some((format) =>
           selectedFormats.includes(format)
         );
       });
     }
 
     setFilteredRooms(filtered);
+    setCurrentPage(1); // Reset trang khi filter thay đổi
   }, [rooms, selectedCities, selectedCinemas, selectedFormats]);
 
-  // Build cinema tree structure for TreeSelect
+  // ─── Helpers ────────────────────────────────────────────────────────────────
   const buildCinemaTree = (cinemasList) => {
-    const parentCinemas = cinemasList.filter(cinema => !cinema.parentId);
-    const childCinemas = cinemasList.filter(cinema => cinema.parentId);
+    const parentCinemas = cinemasList.filter((cinema) => !cinema.parentId);
+    const childCinemas = cinemasList.filter((cinema) => cinema.parentId);
 
-    const treeData = parentCinemas.map(parent => ({
+    return parentCinemas.map((parent) => ({
       title: parent.name,
       value: parent._id,
       key: parent._id,
       children: childCinemas
-        .filter(child => {
-          const parentIdValue = typeof child.parentId === 'object' 
-            ? child.parentId._id 
-            : child.parentId;
+        .filter((child) => {
+          const parentIdValue =
+            typeof child.parentId === "object"
+              ? child.parentId._id
+              : child.parentId;
           return parentIdValue === parent._id;
         })
-        .map(child => ({
+        .map((child) => ({
           title: `└─ ${child.name}`,
           value: child._id,
           key: child._id,
-        }))
+        })),
     }));
-
-    return treeData;
   };
 
-  // Get cinemas filtered by selected cities
   const getFilteredCinemaTree = () => {
-    if (selectedCities.length === 0) {
-      return buildCinemaTree(cinemas);
-    }
+    if (selectedCities.length === 0) return buildCinemaTree(cinemas);
 
-    const filtered = cinemas.filter(cinema => {
+    const filtered = cinemas.filter((cinema) => {
       if (!cinema.cityIds) return false;
-      
-      return cinema.cityIds.some(cityId => {
-        const cityIdValue = typeof cityId === 'object' ? cityId._id : cityId;
+      return cinema.cityIds.some((cityId) => {
+        const cityIdValue =
+          typeof cityId === "object" ? cityId._id : cityId;
         return selectedCities.includes(cityIdValue);
       });
     });
@@ -172,33 +167,26 @@ const RoomListPage = () => {
     return buildCinemaTree(filtered);
   };
 
-  // Reset all filters
   const handleResetFilters = () => {
     setSelectedCities([]);
     setSelectedCinemas([]);
     setSelectedFormats([]);
   };
 
-  // Handle status toggle
+  // ─── Handlers ───────────────────────────────────────────────────────────────
   const handleStatusToggle = async (room) => {
     const roomId = room._id;
     const newStatus = room.status === "active" ? "inactive" : "active";
-
     try {
       setActionLoading((prev) => ({ ...prev, [`status_${roomId}`]: true }));
-
       await updateRoomStatus(roomId, newStatus);
-
       setRooms((prev) =>
         prev.map((item) =>
           item._id === roomId ? { ...item, status: newStatus } : item
         )
       );
-
       messageApi.success(
-        `Đã ${
-          newStatus === "active" ? "kích hoạt" : "vô hiệu hóa"
-        } phòng chiếu thành công`
+        `Đã ${newStatus === "active" ? "kích hoạt" : "vô hiệu hóa"} phòng chiếu thành công`
       );
     } catch (err) {
       console.error("Error updating status:", err);
@@ -210,15 +198,11 @@ const RoomListPage = () => {
     }
   };
 
-  // Handle delete room
   const handleDelete = async (roomId) => {
     try {
       setActionLoading((prev) => ({ ...prev, [`delete_${roomId}`]: true }));
-
       await deleteRoom(roomId);
-
       setRooms((prev) => prev.filter((item) => item._id !== roomId));
-
       messageApi.success("Xóa phòng chiếu thành công");
     } catch (err) {
       console.error("Error deleting room:", err);
@@ -230,22 +214,13 @@ const RoomListPage = () => {
     }
   };
 
-  // Render status tag
+  // ─── Render helpers ─────────────────────────────────────────────────────────
   const renderStatusTag = (status, record) => {
     const statusConfig = {
-      active: {
-        color: "green",
-        text: "Hoạt động",
-        icon: <CheckCircleOutlined />,
-      },
-      inactive: {
-        color: "red",
-        text: "Ngưng hoạt động",
-        icon: <CloseCircleOutlined />,
-      },
+      active: { color: "green", text: "Hoạt động", icon: <CheckCircleOutlined /> },
+      inactive: { color: "red", text: "Ngưng hoạt động", icon: <CloseCircleOutlined /> },
     };
     const config = statusConfig[status] || statusConfig.inactive;
-
     return (
       <Tag
         color={config.color}
@@ -253,36 +228,24 @@ const RoomListPage = () => {
         style={{ cursor: "pointer" }}
         onClick={() => handleStatusToggle(record)}
       >
-        {actionLoading[`status_${record._id}`]
-          ? "Đang cập nhật..."
-          : config.text}
+        {actionLoading[`status_${record._id}`] ? "Đang cập nhật..." : config.text}
       </Tag>
     );
   };
 
-  // Render cinema info
   const renderCinemaInfo = (cinemaId) => {
     if (!cinemaId) return "Chưa cập nhật";
-    
-    if (typeof cinemaId === 'object') {
-      return cinemaId.name;
-    }
-    
-    return cinemaId;
+    return typeof cinemaId === "object" ? cinemaId.name : cinemaId;
   };
 
-  // Render cities
   const renderCities = (cinemaId) => {
-    if (!cinemaId || typeof cinemaId !== 'object' || !cinemaId.cityIds) {
+    if (!cinemaId || typeof cinemaId !== "object" || !cinemaId.cityIds)
       return "Chưa cập nhật";
-    }
-
-    const cities = cinemaId.cityIds;
-    if (!Array.isArray(cities) || cities.length === 0) return "Chưa cập nhật";
-
+    const cityList = cinemaId.cityIds;
+    if (!Array.isArray(cityList) || cityList.length === 0) return "Chưa cập nhật";
     return (
       <Space wrap>
-        {cities.map((city, index) => (
+        {cityList.map((city, index) => (
           <Tag key={index} color="blue">
             {typeof city === "object" ? city.name : city}
           </Tag>
@@ -291,7 +254,7 @@ const RoomListPage = () => {
     );
   };
 
-  // Table columns
+  // ─── Columns ────────────────────────────────────────────────────────────────
   const columns = [
     {
       title: "Tên phòng chiếu",
@@ -322,7 +285,7 @@ const RoomListPage = () => {
       align: "center",
       sorter: (a, b) => (a.seatLayout?.length || 0) - (b.seatLayout?.length || 0),
       render: (_, record) => (
-        <Tag color="cyan" style={{ fontSize: '14px', fontWeight: 'bold' }}>
+        <Tag color="cyan" style={{ fontSize: "14px", fontWeight: "bold" }}>
           {record.seatLayout?.length || 0}
         </Tag>
       ),
@@ -365,14 +328,8 @@ const RoomListPage = () => {
       width: 140,
       align: "center",
       filters: [
-        {
-          text: "Hoạt động",
-          value: "active",
-        },
-        {
-          text: "Ngưng hoạt động",
-          value: "inactive",
-        }
+        { text: "Hoạt động", value: "active" },
+        { text: "Ngưng hoạt động", value: "inactive" },
       ],
       onFilter: (value, record) => record.status === value,
       render: renderStatusTag,
@@ -409,7 +366,6 @@ const RoomListPage = () => {
               onClick={() => navigate(`/admin/rooms/${record._id}`)}
             />
           </Tooltip>
-
           <Tooltip title="Chỉnh sửa">
             <Button
               type="default"
@@ -418,7 +374,6 @@ const RoomListPage = () => {
               onClick={() => navigate(`/admin/rooms/edit/${record._id}`)}
             />
           </Tooltip>
-
           <Tooltip title="Xóa">
             <Popconfirm
               title="Xác nhận xóa"
@@ -442,20 +397,23 @@ const RoomListPage = () => {
     },
   ];
 
+  // ─── Render ─────────────────────────────────────────────────────────────────
   if (loading) return <Loading tip="Đang tải danh sách phòng chiếu..." />;
 
-  if (error) {
-    return <ErrorDisplay message={error} onRetry={fetchRooms} />;
-  }
+  if (error) return <ErrorDisplay message={error} onRetry={fetchRooms} />;
+
+  const pagedData = filteredRooms.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <>
       {contextHolder}
       <div style={{ padding: "20px" }}>
-        {/* Header with button and filters */}
+        {/* Header + Filters */}
         <Card style={{ marginBottom: "20px" }}>
           <Row gutter={[16, 16]} align="middle">
-            {/* Button bên trái */}
             <Col>
               <Link to="/admin/rooms/create">
                 <Button
@@ -469,7 +427,6 @@ const RoomListPage = () => {
               </Link>
             </Col>
 
-            {/* Bộ lọc bên phải */}
             <Col flex="auto">
               <Row gutter={[12, 12]} justify="end">
                 <Col>
@@ -487,10 +444,7 @@ const RoomListPage = () => {
                     value={selectedCities}
                     onChange={(values) => {
                       setSelectedCities(values);
-                      // Reset cinema filter when cities change
-                      if (values.length === 0) {
-                        setSelectedCinemas([]);
-                      }
+                      if (values.length === 0) setSelectedCinemas([]);
                     }}
                     options={cities.map((city) => ({
                       label: city.name,
@@ -512,7 +466,7 @@ const RoomListPage = () => {
                     value={selectedCinemas}
                     onChange={setSelectedCinemas}
                     disabled={selectedCities.length === 0}
-                    dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
+                    dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
                     notFoundContent={
                       selectedCities.length === 0
                         ? "Vui lòng chọn thành phố trước"
@@ -542,10 +496,7 @@ const RoomListPage = () => {
                 </Col>
 
                 <Col>
-                  <Button
-                    icon={<ReloadOutlined />}
-                    onClick={handleResetFilters}
-                  >
+                  <Button icon={<ReloadOutlined />} onClick={handleResetFilters}>
                     Reset bộ lọc
                   </Button>
                 </Col>
@@ -558,17 +509,9 @@ const RoomListPage = () => {
         <Card>
           <Table
             columns={columns}
-            dataSource={filteredRooms}
+            dataSource={pagedData}
             rowKey="_id"
-            pagination={{
-              total: filteredRooms.length,
-              pageSize: 10,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} của ${total} phòng chiếu`,
-              pageSizeOptions: ["10", "20", "50", "100"],
-            }}
+            pagination={false}
             scroll={{ x: 1000 }}
             size="middle"
             locale={{
@@ -581,6 +524,34 @@ const RoomListPage = () => {
                   : "Chưa có phòng chiếu nào",
             }}
           />
+
+          {/* Dòng cuối: Thùng rác (trái) | Pagination (phải) */}
+          <div className="room-list__pagination-row">
+            <Button
+              icon={<DeleteOutlined />}
+              danger
+              onClick={() => navigate("/admin/rooms/trash")}
+            >
+              Thùng rác
+            </Button>
+
+            <Pagination
+              current={currentPage}
+              pageSize={pageSize}
+              total={filteredRooms.length}
+              showSizeChanger
+              showQuickJumper
+              size="small"
+              showTotal={(total, range) =>
+                `${range[0]}-${range[1]} của ${total} phòng chiếu`
+              }
+              pageSizeOptions={["10", "20", "50", "100"]}
+              onChange={(page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              }}
+            />
+          </div>
         </Card>
       </div>
     </>

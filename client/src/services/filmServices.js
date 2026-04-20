@@ -24,6 +24,23 @@ export const deleteFilm = (id) => del(API_ENDPOINTS.FILMS.DELETE(id));
 export const updateFilmStatus = (id, status) =>
   patch(API_ENDPOINTS.FILMS.UPDATE(id), { status });
 
+
 // Update film trending status
 export const updateFilmTrending = (id, isTrending) =>
   patch(API_ENDPOINTS.FILMS.UPDATE(id), { isTrending });
+
+// TRASH //
+
+// Get all trashed films
+export const getTrashFilms = () => {
+  return get(API_ENDPOINTS.FILMS.TRASH);
+};
+
+// Restore film
+export const restoreFilm = (id) => 
+  patch(API_ENDPOINTS.FILMS.UPDATE(id), { deleted: false });
+
+// Permanently delete film
+export const deleteFilmPermanent = (id) => {
+  return del(API_ENDPOINTS.FILMS.DELETE_PERMANENT(id));
+};
