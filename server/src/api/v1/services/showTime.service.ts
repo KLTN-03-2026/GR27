@@ -6,6 +6,7 @@ import Cinema from "../models/cinema.model";
 import { IShowTimeCreate, IShowTimeUpdate, ShowTimeSeatStatus } from "../../../types/showTime.type";
 import { CommonStatus } from "../../../types/common.type";
 import { UserRole } from "../../../types/user.type";
+import Order from "../models/order.model";
 
 // ── Helpers nội bộ ────────────────────────────────────────────────────────────
 
@@ -255,6 +256,36 @@ export const deleteShowTime = async (id: string) => {
   showtime.deleted = true;
   await showtime.save();
 };
+
+// ── Trash ────────────────────────────────────────────────────────────────────
+ 
+export const getTrashedShowTimes = async () => {
+  return ShowTime.find({ deleted: true })
+    .populate({ path: "filmId", select: "title thumbnail" })
+    .populate({ path: "cinemaId", select: "name address" })
+    .populate({ path: "roomId", select: "name" })
+    .sort({ updatedAt: -1 });
+};
+ 
+// Xóa vĩnh viễn — check kỹ trước khi xóa
+export const permanentDeleteShowTime = async (id: string) => {
+  const showtime = await ShowTime.findOne({ _id: id, deleted: true });
+  if (!showtime) throw { status: 404, message: "Không tìm thấy suất chiếu trong thùng rác" };
+ 
+  // Check order — đây là liên kết quan trọng nhất
+  // Kể cả order đã cancelled/expired vì vẫn là lịch sử giao dịch cần giữ lại
+  const orderCount = await Order.countDocuments({ showtimeId: id });
+  if (orderCount > 0) {
+    throw {
+      status: 400,
+      message: `Không thể xóa vĩnh viễn. Suất chiếu đang được tham chiếu bởi ${orderCount} đơn hàng (kể cả đã hủy). Dữ liệu lịch sử giao dịch sẽ bị mất.`,
+    };
+  }
+ 
+  await ShowTime.findByIdAndDelete(id);
+};
+
+// ── Public queries ────────────────────────────────────────────────────────────
 
 export interface IGetShowTimesByFilmQuery {
   cinemaId?: string;

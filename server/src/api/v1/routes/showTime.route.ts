@@ -6,38 +6,31 @@ import { authMiddleware, optionalAuthMiddleware } from "../../../middlewares/aut
 import { UserRole } from "../../../types/user.type";
 import { validateCreateShowTime, validateUpdateShowTime } from "../validators/showTime.validator";
 
-// [GET] LIST: /api/v1/show-times
-// Hỗ trợ query params: ?page=2&status=active&filmId=xxx&cinemaId=yyy&startDate=2025-01-01&endDate=2025-01-31
+// [GET] /api/v1/show-times
 router.get("/", optionalAuthMiddleware, showTimeController.index);
 
-// ✅ [GET] SHOWTIMES BY FILM ID: /api/v1/show-times/film/:filmId
-// Query params: ?page=1&limit=20&cinemaId=xxx&cityId=yyy&format=2D&startDate=2025-01-01&endDate=2025-01-31
+// [GET] /api/v1/show-times/trash  (admin) — đặt TRƯỚC /:id
+router.get("/trash", authMiddleware(UserRole.ADMIN), showTimeController.getTrash);
+
+// [GET] /api/v1/show-times/film/:filmId
 router.get("/film/:filmId", optionalAuthMiddleware, showTimeController.getByFilmId);
 
-// [GET] SHOWTIMES BY CINEMA ID: /api/v1/show-times/cinema/:cinemaId
-// Query params: ?date=YYYY-MM-DD
+// [GET] /api/v1/show-times/cinema/:cinemaId
 router.get("/cinema/:cinemaId", showTimeController.getByCinemaId);
 
-// [GET] DETAIL BY ID: /api/v1/show-times/:id
+// [GET] /api/v1/show-times/:id
 router.get("/:id", optionalAuthMiddleware, showTimeController.getById);
 
-// [POST] CREATE: /api/v1/show-times
-router.post(
-  "/",
-  authMiddleware(UserRole.ADMIN),
-  validateCreateShowTime,
-  showTimeController.create
-);
+// [POST] /api/v1/show-times
+router.post("/", authMiddleware(UserRole.ADMIN), validateCreateShowTime, showTimeController.create);
 
-// [PATCH] EDIT: /api/v1/show-times/:id
-router.patch(
-  "/:id",
-  authMiddleware(UserRole.ADMIN),
-  validateUpdateShowTime,
-  showTimeController.edit
-);
+// [PATCH] /api/v1/show-times/:id
+router.patch("/:id", authMiddleware(UserRole.ADMIN), validateUpdateShowTime, showTimeController.edit);
 
-// [DELETE] DELETE: /api/v1/show-times/:id
+// [DELETE] /api/v1/show-times/:id/permanent  — xóa vĩnh viễn (đặt TRƯỚC /:id)
+router.delete("/:id/permanent", authMiddleware(UserRole.ADMIN), showTimeController.permanentDelete);
+
+// [DELETE] /api/v1/show-times/:id  — xóa mềm
 router.delete("/:id", authMiddleware(UserRole.ADMIN), showTimeController.remove);
 
 export default router;

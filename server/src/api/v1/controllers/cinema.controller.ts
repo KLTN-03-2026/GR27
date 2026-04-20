@@ -8,13 +8,19 @@ export const index = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json(cinemas);
 };
 
-// [GET] /api/v1/cinemas/slug/:slug
+// [GET] /api/v1/cinemas/trash  (admin)
+export const getTrash = async (req: Request, res: Response): Promise<void> => {
+  const cinemas = await cinemaService.getTrashedCinemas();
+  res.status(200).json({ code: 200, message: "Thành công", data: cinemas });
+};
+
+// [GET] /api/v1/cinemas/slug/:slug  (public)
 export const getBySlug = async (req: Request, res: Response): Promise<void> => {
   const cinema = await cinemaService.getCinemaBySlug(req.params.slug);
   res.status(200).json(cinema);
 };
 
-// [GET] /api/v1/cinemas/:id
+// [GET] /api/v1/cinemas/:id  (admin)
 export const getById = async (req: Request, res: Response): Promise<void> => {
   const cinema = await cinemaService.getCinemaById(req.params.id);
   res.status(200).json({ code: 200, message: "Thành công", data: cinema });
@@ -26,14 +32,20 @@ export const create = async (req: Request, res: Response): Promise<void> => {
   res.status(201).json(cinema);
 };
 
-// [PATCH] /api/v1/cinemas/:id
+// [PATCH] /api/v1/cinemas/:id  — edit hoặc khôi phục ({ deleted: false })
 export const edit = async (req: Request, res: Response): Promise<void> => {
   const cinema = await cinemaService.updateCinema(req.params.id, req.body as ICinemaUpdate);
   res.status(200).json(cinema);
 };
 
-// [DELETE] /api/v1/cinemas/:id
+// [DELETE] /api/v1/cinemas/:id  — xóa mềm
 export const remove = async (req: Request, res: Response): Promise<void> => {
   await cinemaService.deleteCinema(req.params.id);
   res.status(200).json({ code: 200, message: "Xóa rạp chiếu thành công" });
+};
+
+// [DELETE] /api/v1/cinemas/:id/permanent  — xóa vĩnh viễn (chỉ cinema trong trash)
+export const permanentDelete = async (req: Request, res: Response): Promise<void> => {
+  await cinemaService.permanentDeleteCinema(req.params.id);
+  res.status(200).json({ code: 200, message: "Xóa vĩnh viễn rạp chiếu thành công" });
 };

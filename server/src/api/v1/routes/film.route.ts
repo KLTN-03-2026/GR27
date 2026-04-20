@@ -1,4 +1,4 @@
-import { Router} from "express";
+import { Router } from "express";
 const router: Router = Router();
 
 import * as filmController from "../controllers/film.controller";
@@ -6,26 +6,28 @@ import { authMiddleware, optionalAuthMiddleware } from "../../../middlewares/aut
 import { UserRole } from "../../../types/user.type";
 import { validateCreateFilm, validateUpdateFilm } from "../validators/film.validator";
 
+// [GET] /api/v1/films
+router.get("/", optionalAuthMiddleware, filmController.index);
 
- router.get("/", optionalAuthMiddleware, filmController.index);
+// [GET] /api/v1/films/trash  (admin) — phải đặt TRƯỚC /:id để không bị match nhầm
+router.get("/trash", authMiddleware(UserRole.ADMIN), filmController.getTrash);
 
-//--- PUBLIC ---
+// [GET] /api/v1/films/slug/:slug  (public)
+router.get("/slug/:slug", filmController.getBySlug);
 
-//[GET] DETAIL: /api/v1/films/slug/:slug
- router.get("/slug/:slug",  filmController.getBySlug);
-
-//[GET] GET BY ID: /api/v1/films/:id
+// [GET] /api/v1/films/:id  (admin)
 router.get("/:id", authMiddleware(UserRole.ADMIN), filmController.getById);
 
-//[POST] CREATE: /api/v1/films
-router.post("/", authMiddleware(UserRole.ADMIN),validateCreateFilm, filmController.create);
+// [POST] /api/v1/films
+router.post("/", authMiddleware(UserRole.ADMIN), validateCreateFilm, filmController.create);
 
-//[PATCH] EDIT: /api/v1/films/:id
-router.patch("/:id", authMiddleware(UserRole.ADMIN),validateUpdateFilm, filmController.edit);
+// [PATCH] /api/v1/films/:id  — edit hoặc khôi phục ({ deleted: false })
+router.patch("/:id", authMiddleware(UserRole.ADMIN), validateUpdateFilm, filmController.edit);
 
-//[DELETE] DELETE: /api/v1/films/:id
+// [DELETE] /api/v1/films/:id/permanent  — xóa vĩnh viễn (đặt TRƯỚC /:id)
+router.delete("/:id/permanent", authMiddleware(UserRole.ADMIN), filmController.permanentDelete);
+
+// [DELETE] /api/v1/films/:id  — xóa mềm
 router.delete("/:id", authMiddleware(UserRole.ADMIN), filmController.remove);
-
-
 
 export default router;

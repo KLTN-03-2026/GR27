@@ -105,3 +105,28 @@ export const deleteRoom = async (id: string) => {
   room.deleted = true;
   await room.save();
 };
+
+// ── Trash ────────────────────────────────────────────────────────────────────
+ 
+export const getTrashedRooms = async () => {
+  return Room.find({ deleted: true })
+    .populate(CINEMA_POPULATE)
+    .sort({ updatedAt: -1 });
+};
+ 
+// Xóa vĩnh viễn — check kỹ trước khi xóa
+export const permanentDeleteRoom = async (id: string) => {
+  const room = await Room.findOne({ _id: id, deleted: true });
+  if (!room) throw { status: 404, message: "Không tìm thấy phòng chiếu trong thùng rác" };
+ 
+  // Check showtime — kể cả deleted, vì order vẫn tham chiếu showtime đó qua roomId
+  const showtimeCount = await ShowTime.countDocuments({ roomId: id });
+  if (showtimeCount > 0) {
+    throw {
+      status: 400,
+      message: `Không thể xóa vĩnh viễn. Phòng đang được tham chiếu bởi ${showtimeCount} suất chiếu (kể cả đã xóa). Dữ liệu đơn hàng có thể bị ảnh hưởng.`,
+    };
+  }
+ 
+  await Room.findByIdAndDelete(id);
+};

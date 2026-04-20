@@ -23,7 +23,7 @@ app.use(express.urlencoded({ extended: true })); // Nếu dùng form HTML gửi 
 // Cho phép CORS
 app.use(
   cors({
-    origin: ["http://localhost:3000"], // ✅ Chỉ cho phép React app
+    origin: ["http://localhost:3000", "http://localhost:4000"], // ✅ Chỉ cho phép React app
     credentials: true, //Cho phép gửi request với cookie, phải có
   })
 ); // cấu hình mặc định: cho phép tất cả origin
