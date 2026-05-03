@@ -5,11 +5,17 @@ import Film from "../models/film.model";
 import Cinema from "../models/cinema.model";
 import { IShowTimeCreate, IShowTimeUpdate, ShowTimeSeatStatus } from "../../../types/showTime.type";
 import { CommonStatus } from "../../../types/common.type";
-import { UserRole } from "../../../types/user.type";
 import Order from "../models/order.model";
+
+// ── Hằng số ───────────────────────────────────────────────────────────────────
+const BUFFER_MINUTES = 30; // Giãn cách tối thiểu giữa các suất chiếu (phút)
 
 // ── Helpers nội bộ ────────────────────────────────────────────────────────────
 
+/**
+ * Kiểm tra xung đột thời gian (trùng lịch) trong cùng phòng.
+ * Trả về true nếu có xung đột.
+ */
 const checkTimeConflict = async (
   roomId: string,
   startTime: Date,
@@ -28,6 +34,90 @@ const checkTimeConflict = async (
   if (excludeId) query._id = { $ne: excludeId };
 
   return !!(await ShowTime.findOne(query));
+};
+
+/**
+ * Kiểm tra vi phạm giãn cách 30 phút giữa các suất chiếu trong cùng phòng.
+ * - Suất chiếu mới phải bắt đầu ít nhất 30 phút sau khi suất trước kết thúc.
+ * - Suất chiếu kế tiếp phải bắt đầu ít nhất 30 phút sau khi suất mới kết thúc.
+ * Trả về message lỗi nếu vi phạm, null nếu hợp lệ.
+ */
+const checkBufferConflict = async (
+  roomId: string,
+  startTime: Date,
+  endTime: Date,
+  excludeId?: string
+): Promise<string | null> => {
+  const bufferMs = BUFFER_MINUTES * 60 * 1000;
+
+  // Khoảng mở rộng bao gồm cả buffer
+  const windowStart = new Date(startTime.getTime() - bufferMs);
+  const windowEnd = new Date(endTime.getTime() + bufferMs);
+
+  const query: any = {
+    roomId,
+    deleted: false,
+    $or: [
+      { startTime: { $lt: windowEnd }, endTime: { $gt: windowStart } },
+    ],
+  };
+  if (excludeId) query._id = { $ne: excludeId };
+
+  const neighbors = await ShowTime.find(query).sort({ startTime: 1 });
+
+  for (const neighbor of neighbors) {
+    const nStart = neighbor.startTime.getTime();
+    const nEnd = neighbor.endTime.getTime();
+    const newStart = startTime.getTime();
+    const newEnd = endTime.getTime();
+
+    // Suất chiếu neighbor kết thúc trước suất mới bắt đầu
+    if (nEnd <= newStart) {
+      const gap = (newStart - nEnd) / 60000;
+      if (gap < BUFFER_MINUTES) {
+        return `Suất chiếu trước kết thúc lúc ${formatTime(neighbor.endTime)}, cần giãn cách ít nhất ${BUFFER_MINUTES} phút (bắt đầu sớm nhất: ${formatTimeOffset(neighbor.endTime, BUFFER_MINUTES)})`;
+      }
+    }
+
+    // Suất chiếu neighbor bắt đầu sau suất mới kết thúc
+    if (nStart >= newEnd) {
+      const gap = (nStart - newEnd) / 60000;
+      if (gap < BUFFER_MINUTES) {
+        return `Suất chiếu tiếp theo bắt đầu lúc ${formatTime(neighbor.startTime)}, cần giãn cách ít nhất ${BUFFER_MINUTES} phút (kết thúc muộn nhất: ${formatTimeOffset(neighbor.startTime, -BUFFER_MINUTES)})`;
+      }
+    }
+  }
+
+  return null;
+};
+
+/**
+ * Kiểm tra suất chiếu không được trước ngày khởi chiếu của phim.
+ * Trả về message lỗi nếu vi phạm, null nếu hợp lệ.
+ */
+const checkReleaseDate = (film: any, startTime: Date): string | null => {
+  if (!film.releaseDate) return null;
+  const release = new Date(film.releaseDate);
+  release.setHours(0, 0, 0, 0);
+  if (startTime < release) {
+    return `Không thể tạo suất chiếu trước ngày khởi chiếu của phim (${release.toLocaleDateString("vi-VN")})`;
+  }
+  return null;
+};
+
+/** Format Date thành "HH:mm DD/MM/YYYY" */
+const formatTime = (date: Date): string => {
+  const d = new Date(date);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  return `${hh}:${mm} ${dd}/${mo}/${d.getFullYear()}`;
+};
+
+/** Format thời gian dịch chuyển offsetMinutes phút */
+const formatTimeOffset = (date: Date, offsetMinutes: number): string => {
+  return formatTime(new Date(new Date(date).getTime() + offsetMinutes * 60000));
 };
 
 const hasBookedSeats = (seats: any[]): boolean =>
@@ -83,7 +173,7 @@ export const getShowTimes = async ({ page = 1, isAdmin = false, status, filmId, 
       .populate({ path: "filmId", select: "title" })
       .populate({ path: "cinemaId", select: "name address" })
       .populate({ path: "roomId", select: "name" })
-      .sort({ startTime: 1 })
+      .sort({ startTime: -1 })
       .skip(skip)
       .limit(limit),
   ]);
@@ -138,11 +228,19 @@ export const createShowTime = async (data: IShowTimeCreate) => {
     };
   }
 
-  // 7. Kiểm tra xung đột thời gian
+  // 7. Validate ngày khởi chiếu
+  const releaseDateError = checkReleaseDate(film, new Date(data.startTime));
+  if (releaseDateError) throw { status: 400, message: releaseDateError };
+
+  // 8. Kiểm tra xung đột thời gian (trùng lịch)
   const hasConflict = await checkTimeConflict(data.roomId.toString(), data.startTime, data.endTime);
   if (hasConflict) throw { status: 400, message: "Khoảng thời gian này bị trùng với suất chiếu khác trong cùng phòng" };
 
-  // 8. Snapshot seats từ room
+  // 9. Kiểm tra giãn cách 30 phút
+  const bufferError = await checkBufferConflict(data.roomId.toString(), data.startTime, data.endTime);
+  if (bufferError) throw { status: 400, message: bufferError };
+
+  // 10. Snapshot seats từ room
   return ShowTime.create({ ...data, seats: snapshotSeats(room.seatLayout) });
 };
 
@@ -209,14 +307,28 @@ export const updateShowTime = async (id: string, data: IShowTimeUpdate) => {
     }
   }
 
-  // Validate xung đột thời gian
+  // Validate ngày khởi chiếu khi đổi phim hoặc đổi startTime
+  if (data.filmId || data.startTime) {
+    const targetFilmId = data.filmId || current.filmId;
+    const film = await Film.findOne({ _id: targetFilmId, deleted: false });
+    if (!film) throw { status: 404, message: "Không tìm thấy phim" };
+
+    const checkStart = new Date(data.startTime || current.startTime);
+    const releaseDateError = checkReleaseDate(film, checkStart);
+    if (releaseDateError) throw { status: 400, message: releaseDateError };
+  }
+
+  // Validate xung đột thời gian + giãn cách khi đổi thời gian
   if (data.startTime || data.endTime) {
-    const checkStart = data.startTime || current.startTime;
-    const checkEnd = data.endTime || current.endTime;
+    const checkStart = new Date(data.startTime || current.startTime);
+    const checkEnd = new Date(data.endTime || current.endTime);
     const checkRoom = data.roomId || current.roomId;
 
     const hasConflict = await checkTimeConflict(checkRoom.toString(), checkStart, checkEnd, id);
     if (hasConflict) throw { status: 400, message: "Khoảng thời gian này bị trùng với suất chiếu khác trong cùng phòng" };
+
+    const bufferError = await checkBufferConflict(checkRoom.toString(), checkStart, checkEnd, id);
+    if (bufferError) throw { status: 400, message: bufferError };
   }
 
   // Validate filmId mới
@@ -258,7 +370,7 @@ export const deleteShowTime = async (id: string) => {
 };
 
 // ── Trash ────────────────────────────────────────────────────────────────────
- 
+
 export const getTrashedShowTimes = async () => {
   return ShowTime.find({ deleted: true })
     .populate({ path: "filmId", select: "title thumbnail" })
@@ -266,14 +378,11 @@ export const getTrashedShowTimes = async () => {
     .populate({ path: "roomId", select: "name" })
     .sort({ updatedAt: -1 });
 };
- 
-// Xóa vĩnh viễn — check kỹ trước khi xóa
+
 export const permanentDeleteShowTime = async (id: string) => {
   const showtime = await ShowTime.findOne({ _id: id, deleted: true });
   if (!showtime) throw { status: 404, message: "Không tìm thấy suất chiếu trong thùng rác" };
- 
-  // Check order — đây là liên kết quan trọng nhất
-  // Kể cả order đã cancelled/expired vì vẫn là lịch sử giao dịch cần giữ lại
+
   const orderCount = await Order.countDocuments({ showtimeId: id });
   if (orderCount > 0) {
     throw {
@@ -281,8 +390,155 @@ export const permanentDeleteShowTime = async (id: string) => {
       message: `Không thể xóa vĩnh viễn. Suất chiếu đang được tham chiếu bởi ${orderCount} đơn hàng (kể cả đã hủy). Dữ liệu lịch sử giao dịch sẽ bị mất.`,
     };
   }
- 
+
   await ShowTime.findByIdAndDelete(id);
+};
+
+// ── Bulk Create ───────────────────────────────────────────────────────────────
+
+export interface IBulkShowTimeItem {
+  filmId: string;
+  cinemaId: string;
+  roomId: string;
+  startTime: string;
+  endTime: string;
+  format: string;
+  basePrice: number;
+  seatTypes: { type: string; extraFee: number }[];
+  status?: string;
+}
+
+export interface IBulkCreateResult {
+  created: number;
+  skipped: number;
+  errors: string[];
+}
+
+/**
+ * Tạo suất chiếu hàng loạt.
+ * - Validate từng item, bỏ qua (skip) item vi phạm trùng lịch hoặc giãn cách.
+ * - Trả về { created, skipped, errors }.
+ */
+export const createBulkShowTimes = async (showtimes: IBulkShowTimeItem[]): Promise<IBulkCreateResult> => {
+  if (!Array.isArray(showtimes) || showtimes.length === 0) {
+    throw { status: 400, message: "Danh sách suất chiếu trống" };
+  }
+  if (showtimes.length > 365) {
+    throw { status: 400, message: "Không thể tạo quá 365 suất chiếu cùng lúc" };
+  }
+
+  // Cache room & film để tránh query lặp lại
+  const roomCache = new Map<string, any>();
+  const filmCache = new Map<string, any>();
+  const cinemaCache = new Map<string, any>();
+
+  const getRoom = async (roomId: string) => {
+    if (!roomCache.has(roomId)) {
+      const room = await Room.findOne({ _id: roomId, deleted: false });
+      roomCache.set(roomId, room);
+    }
+    return roomCache.get(roomId);
+  };
+
+  const getFilm = async (filmId: string) => {
+    if (!filmCache.has(filmId)) {
+      const film = await Film.findOne({ _id: filmId, deleted: false });
+      filmCache.set(filmId, film);
+    }
+    return filmCache.get(filmId);
+  };
+
+  const getCinema = async (cinemaId: string) => {
+    if (!cinemaCache.has(cinemaId)) {
+      const cinema = await Cinema.findOne({ _id: cinemaId, deleted: false });
+      cinemaCache.set(cinemaId, cinema);
+    }
+    return cinemaCache.get(cinemaId);
+  };
+
+  let created = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  // Sắp xếp theo startTime để giảm conflict với nhau
+  const sorted = [...showtimes].sort(
+    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+  );
+
+  for (const item of sorted) {
+    const startTime = new Date(item.startTime);
+    const endTime = new Date(item.endTime);
+    const dateLabel = `${String(startTime.getDate()).padStart(2, "0")}/${String(startTime.getMonth() + 1).padStart(2, "0")}/${startTime.getFullYear()} ${String(startTime.getHours()).padStart(2, "0")}:${String(startTime.getMinutes()).padStart(2, "0")}`;
+
+    try {
+      // Validate entities
+      const room = await getRoom(item.roomId);
+      if (!room) { skipped++; errors.push(`[${dateLabel}] Không tìm thấy phòng chiếu`); continue; }
+
+      const film = await getFilm(item.filmId);
+      if (!film) { skipped++; errors.push(`[${dateLabel}] Không tìm thấy phim`); continue; }
+
+      const cinema = await getCinema(item.cinemaId);
+      if (!cinema) { skipped++; errors.push(`[${dateLabel}] Không tìm thấy rạp chiếu`); continue; }
+
+      if (item.cinemaId.toString() !== room.cinemaId.toString()) {
+        skipped++; errors.push(`[${dateLabel}] Rạp chiếu không khớp với phòng`); continue;
+      }
+
+      if (!film.availableFormats.includes(item.format)) {
+        skipped++; errors.push(`[${dateLabel}] Phim không hỗ trợ định dạng ${item.format}`); continue;
+      }
+
+      if (!room.supportedFormats.includes(item.format)) {
+        skipped++; errors.push(`[${dateLabel}] Phòng không hỗ trợ định dạng ${item.format}`); continue;
+      }
+
+      // Validate ngày khởi chiếu
+      const releaseDateError = checkReleaseDate(film, startTime);
+      if (releaseDateError) {
+        skipped++;
+        errors.push(`[${dateLabel}] ${releaseDateError}`);
+        continue;
+      }
+
+      // Kiểm tra xung đột thời gian
+      const hasConflict = await checkTimeConflict(item.roomId, startTime, endTime);
+      if (hasConflict) {
+        skipped++;
+        errors.push(`[${dateLabel}] Trùng lịch với suất chiếu khác`);
+        continue;
+      }
+
+      // Kiểm tra giãn cách 30 phút
+      const bufferError = await checkBufferConflict(item.roomId, startTime, endTime);
+      if (bufferError) {
+        skipped++;
+        errors.push(`[${dateLabel}] Vi phạm giãn cách: ${bufferError}`);
+        continue;
+      }
+
+      // Tạo suất chiếu
+      await ShowTime.create({
+        filmId: item.filmId,
+        cinemaId: item.cinemaId,
+        roomId: item.roomId,
+        startTime,
+        endTime,
+        format: item.format,
+        basePrice: item.basePrice,
+        seatTypes: item.seatTypes,
+        status: item.status || CommonStatus.INACTIVE,
+        seats: snapshotSeats(room.seatLayout),
+      });
+
+      created++;
+    } catch (err: any) {
+      skipped++;
+      errors.push(`[${dateLabel}] Lỗi: ${err?.message || "Lỗi không xác định"}`);
+    }
+  }
+
+  return { created, skipped, errors };
 };
 
 // ── Public queries ────────────────────────────────────────────────────────────
@@ -343,14 +599,12 @@ export const getShowTimesByFilmId = async (filmId: string, isAdmin = false, filt
     .populate({ path: "roomId", select: "name supportedFormats" })
     .sort({ startTime: 1 });
 
-  // Filter theo cityId trong memory
   if (filters.cityId) {
     showtimes = showtimes.filter((st) =>
       st.cinemaId?.cityIds?.some((city: any) => city._id.toString() === filters.cityId)
     );
   }
 
-  // Group by date → cinema
   const grouped = showtimes.reduce((acc: any, st: any) => {
     const d = new Date(st.startTime);
     const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -424,7 +678,6 @@ export const getShowTimesByCinemaId = async (cinemaId: string, dateQuery?: strin
     })
     .sort({ startTime: 1 });
 
-  // Group by film
   const groupedByFilm = showtimes.reduce((acc, st: any) => {
     const film = st.filmId;
     if (!film) return acc;

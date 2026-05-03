@@ -68,6 +68,17 @@ export const create = async (req: Request, res: Response): Promise<void> => {
   res.status(201).json({ code: 201, message: "Tạo suất chiếu thành công", data: showtime });
 };
 
+// [POST] /api/v1/show-times/bulk
+export const createBulk = async (req: Request, res: Response): Promise<void> => {
+  const { showtimes } = req.body;
+  const result = await showTimeService.createBulkShowTimes(showtimes);
+  res.status(200).json({
+    code: 200,
+    message: `Tạo hàng loạt hoàn tất: ${result.created} thành công, ${result.skipped} bỏ qua`,
+    data: result,
+  });
+};
+
 // [PATCH] /api/v1/show-times/:id
 export const edit = async (req: Request, res: Response): Promise<void> => {
   const showtime = await showTimeService.updateShowTime(req.params.id, req.body as IShowTimeUpdate);
@@ -80,7 +91,7 @@ export const remove = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({ code: 200, message: "Xóa suất chiếu thành công" });
 };
 
-// [DELETE] /api/v1/show-times/:id/permanent  — xóa vĩnh viễn (chỉ showtime trong trash)
+// [DELETE] /api/v1/show-times/:id/permanent  — xóa vĩnh viễn
 export const permanentDelete = async (req: Request, res: Response): Promise<void> => {
   await showTimeService.permanentDeleteShowTime(req.params.id);
   res.status(200).json({ code: 200, message: "Xóa vĩnh viễn suất chiếu thành công" });

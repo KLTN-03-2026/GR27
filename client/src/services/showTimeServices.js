@@ -30,3 +30,6 @@ export const permanentDeleteShowTime = (id) => {
   return del(API_ENDPOINTS.SHOW_TIMES.DELETE_PERMANENT(id));
 };
 
+export const createBulkShowTime = (data) =>
+  post(API_ENDPOINTS.SHOW_TIMES.CREATE_BULK, data);
+

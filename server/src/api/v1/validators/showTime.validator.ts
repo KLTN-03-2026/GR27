@@ -418,3 +418,156 @@ export const validateUpdateShowTime = (
     res.status(500).json({ message: "Lỗi server" });
   }
 };
+
+// ✅ Validate tạo hàng loạt showtime
+export const validateBulkCreateShowTime = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  try {
+    const { showtimes } = req.body;
+
+    // Kiểm tra danh sách tồn tại và là mảng
+    if (!showtimes || !Array.isArray(showtimes) || showtimes.length === 0) {
+      res.status(400).json({
+        code: 400,
+        message: "Danh sách suất chiếu không được để trống",
+      });
+      return;
+    }
+
+    // Giới hạn số lượng tạo tối đa (khớp với service)
+    if (showtimes.length > 365) {
+      res.status(400).json({
+        code: 400,
+        message: "Không thể tạo quá 365 suất chiếu cùng lúc",
+      });
+      return;
+    }
+
+    const validFormats = ["2D", "3D", "IMAX", "4DX"];
+
+    // Validate từng item trong danh sách
+    for (let i = 0; i < showtimes.length; i++) {
+      const item = showtimes[i];
+      const prefix = `Suất chiếu #${i + 1}`;
+
+      // filmId
+      if (!item.filmId || !isValidObjectId(item.filmId)) {
+        res.status(400).json({ code: 400, message: `${prefix}: ID phim không hợp lệ` });
+        return;
+      }
+
+      // cinemaId
+      if (!item.cinemaId || !isValidObjectId(item.cinemaId)) {
+        res.status(400).json({ code: 400, message: `${prefix}: ID rạp chiếu không hợp lệ` });
+        return;
+      }
+
+      // roomId
+      if (!item.roomId || !isValidObjectId(item.roomId)) {
+        res.status(400).json({ code: 400, message: `${prefix}: ID phòng chiếu không hợp lệ` });
+        return;
+      }
+
+      // startTime
+      if (!item.startTime) {
+        res.status(400).json({ code: 400, message: `${prefix}: Thời gian bắt đầu không được để trống` });
+        return;
+      }
+      const startTimeObj = new Date(item.startTime);
+      if (isNaN(startTimeObj.getTime())) {
+        res.status(400).json({ code: 400, message: `${prefix}: Thời gian bắt đầu không hợp lệ` });
+        return;
+      }
+
+      // endTime
+      if (!item.endTime) {
+        res.status(400).json({ code: 400, message: `${prefix}: Thời gian kết thúc không được để trống` });
+        return;
+      }
+      const endTimeObj = new Date(item.endTime);
+      if (isNaN(endTimeObj.getTime())) {
+        res.status(400).json({ code: 400, message: `${prefix}: Thời gian kết thúc không hợp lệ` });
+        return;
+      }
+
+      if (endTimeObj <= startTimeObj) {
+        res.status(400).json({ code: 400, message: `${prefix}: Thời gian kết thúc phải sau thời gian bắt đầu` });
+        return;
+      }
+
+      const duration = (endTimeObj.getTime() - startTimeObj.getTime()) / (1000 * 60);
+      if (duration < 30 || duration > 300) {
+        res.status(400).json({
+          code: 400,
+          message: `${prefix}: Thời lượng suất chiếu phải từ 30 phút đến 5 giờ`,
+        });
+        return;
+      }
+
+      // format
+      if (!item.format || !validFormats.includes(item.format)) {
+        res.status(400).json({
+          code: 400,
+          message: `${prefix}: Định dạng chiếu không hợp lệ. Chỉ chấp nhận: ${validFormats.join(", ")}`,
+        });
+        return;
+      }
+
+      // basePrice
+      if (typeof item.basePrice !== "number" || item.basePrice < 10000 || item.basePrice > 1000000) {
+        res.status(400).json({
+          code: 400,
+          message: `${prefix}: Giá cơ bản phải từ 10,000 đến 1,000,000 VNĐ`,
+        });
+        return;
+      }
+
+      // seatTypes
+      if (!item.seatTypes || !Array.isArray(item.seatTypes) || item.seatTypes.length === 0) {
+        res.status(400).json({ code: 400, message: `${prefix}: Phải có ít nhất một loại phụ phí ghế` });
+        return;
+      }
+
+      const seenTypes = new Set<string>();
+      for (const seatType of item.seatTypes) {
+        if (!seatType.type || !Object.values(SeatType).includes(seatType.type)) {
+          res.status(400).json({
+            code: 400,
+            message: `${prefix}: Loại ghế không hợp lệ. Chỉ chấp nhận: ${Object.values(SeatType).join(", ")}`,
+          });
+          return;
+        }
+        if (seenTypes.has(seatType.type)) {
+          res.status(400).json({ code: 400, message: `${prefix}: Loại ghế ${seatType.type} bị trùng lặp` });
+          return;
+        }
+        seenTypes.add(seatType.type);
+
+        if (typeof seatType.extraFee !== "number" || seatType.extraFee < 0 || seatType.extraFee > 500000) {
+          res.status(400).json({
+            code: 400,
+            message: `${prefix}: Phụ phí ghế ${seatType.type} phải từ 0 đến 500,000 VNĐ`,
+          });
+          return;
+        }
+      }
+
+      // status (optional)
+      if (item.status && !Object.values(CommonStatus).includes(item.status)) {
+        res.status(400).json({
+          code: 400,
+          message: `${prefix}: Trạng thái không hợp lệ. Chỉ chấp nhận: ${Object.values(CommonStatus).join(", ")}`,
+        });
+        return;
+      }
+    }
+
+    next();
+  } catch (error) {
+    console.error("Bulk showtime validation error:", error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};

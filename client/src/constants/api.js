@@ -65,6 +65,7 @@ export const API_ENDPOINTS = {
     LIST: "/show-times",
     TRASH: "/show-times/trash",
     CREATE: "/show-times",
+    CREATE_BULK: "/show-times/bulk",       // ← Tạo hàng loạt
     DETAIL_BY_ID: (id) => `/show-times/${id}`,
     DETAIL_BY_SLUG: (slug) => `/show-times/slug/${slug}`,
     UPDATE: (id) => `/show-times/${id}`,
@@ -116,8 +117,8 @@ export const API_ENDPOINTS = {
     UPDATE: (id) => `/orders/${id}`,
     DELETE: (id) => `/orders/${id}`,
     MY_ORDERS: "/orders/me",
-    ADMIN_LIST: "/orders/admin", 
-    ADMIN_DETAIL: (id) => `/orders/admin/${id}`, 
+    ADMIN_LIST: "/orders/admin",
+    ADMIN_DETAIL: (id) => `/orders/admin/${id}`,
   },
 
   // Upload
@@ -125,6 +126,7 @@ export const API_ENDPOINTS = {
     IMAGE: "/upload/image",
     VIDEO: "/upload/video",
   },
+
   CITIES: {
     LIST: "/cities",
     CREATE: "/cities",

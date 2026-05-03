@@ -4,7 +4,11 @@ const router: Router = Router();
 import * as showTimeController from "../controllers/showTime.controller";
 import { authMiddleware, optionalAuthMiddleware } from "../../../middlewares/auth.middleware";
 import { UserRole } from "../../../types/user.type";
-import { validateCreateShowTime, validateUpdateShowTime } from "../validators/showTime.validator";
+import {
+  validateCreateShowTime,
+  validateUpdateShowTime,
+  validateBulkCreateShowTime,
+} from "../validators/showTime.validator";
 
 // [GET] /api/v1/show-times
 router.get("/", optionalAuthMiddleware, showTimeController.index);
@@ -20,6 +24,14 @@ router.get("/cinema/:cinemaId", showTimeController.getByCinemaId);
 
 // [GET] /api/v1/show-times/:id
 router.get("/:id", optionalAuthMiddleware, showTimeController.getById);
+
+// [POST] /api/v1/show-times/bulk  — tạo hàng loạt (đặt TRƯỚC / để tránh conflict route)
+router.post(
+  "/bulk",
+  authMiddleware(UserRole.ADMIN),
+  validateBulkCreateShowTime,
+  showTimeController.createBulk
+);
 
 // [POST] /api/v1/show-times
 router.post("/", authMiddleware(UserRole.ADMIN), validateCreateShowTime, showTimeController.create);
