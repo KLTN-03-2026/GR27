@@ -18,19 +18,39 @@
       font-size: 25px;
       font-weight: bold;
     }
-    .slider-item {
-      padding: 0 15px;
-      .film-card {
-        border-radius: 8px;
-        overflow: hidden;
-        position: relative;
-        transition: transform 0.3s ease;
-        border: 1px solid #e8e8e8;
+    // .slider-item {
+    //   padding: 0 15px;
+    //   .film-card {
+    //     border-radius: 8px;
+    //     overflow: hidden;
+    //     position: relative;
+    //     transition: transform 0.3s ease;
+    //     border: 1px solid #e8e8e8;
 
-        &:hover {
-          transform: translateY(-10px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-        }
+    //     &:hover {
+    //       transform: translateY(-10px);
+    //       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    //     }
+
+  .slick-list {
+      overflow: visible;
+      // THÊM: chỉ clip theo chiều ngang, không clip chiều dọc
+      clip-path: inset(0 -1px); // cho phép card trượt lên trên thoải mái
+    }
+
+.slider-item {
+  padding: 10px 15px; // tăng padding-top để có chỗ cho animation hover
+  .film-card {
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e8e8e8;
+
+    &:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 8px 24px rgba(254, 62, 73, 0.3); // đỏ nhạt giống màu #fe3e49
+    }
 
         .film-poster {
           position: relative;
