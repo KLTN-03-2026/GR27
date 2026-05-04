@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "node16",              // ✅ Dùng CommonJS cho dễ deploy Node.js
-    "moduleResolution": "Node16",        // ✅ Không cần NodeNext nữa
+    "module": "node16",              
+    "moduleResolution": "Node16",        
     "rootDir": "./src",
     "outDir": "./dist",
     "esModuleInterop": true,

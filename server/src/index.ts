@@ -12,7 +12,7 @@ import { errorHandler } from "./middlewares/error.middleware";
 // Khởi động app và thiết lập port
 const app: Express = express();
 const port: number | string = process.env.PORT || 3000;
-
+const clientUrl: string = process.env.CLIENT_URL || "http://localhost:3000";
 // Kết nối Database
 database.connect();
 
@@ -23,7 +23,7 @@ app.use(express.urlencoded({ extended: true })); // Nếu dùng form HTML gửi 
 // Cho phép CORS
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:4000"], // ✅ Chỉ cho phép React app
+    origin: [clientUrl, "http://localhost:4000"], // ✅ Chỉ cho phép React app
     credentials: true, //Cho phép gửi request với cookie, phải có
   })
 ); // cấu hình mặc định: cho phép tất cả origin

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import './LayoutUser.scss';
+import Chatbot from '../../components/Chatbot';
 
 const { Content } = Layout;
 
@@ -14,6 +15,7 @@ const LayoutUser = () => {
         <Outlet />
       </Content>
       <Footer />
+      <Chatbot />
     </Layout>
   );
 };

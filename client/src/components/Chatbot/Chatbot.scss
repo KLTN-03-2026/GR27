@@ -1,0 +1,545 @@
+// src/components/Chatbot/Chatbot.scss
+
+// ── Variables ──────────────────────────────────────────────────────────────────
+$primary: #e50914;
+$primary-dark: #c40812;
+$bg-chat: #ffffff;
+$bg-header: #1a1a1a;
+$bg-bot-msg: #f4f4f4;
+$bg-user-msg: #e50914;
+$text-main: #1a1a1a;
+$text-muted: #888;
+$border: #e8e8e8;
+$shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+$radius-lg: 20px;
+$radius-msg: 16px;
+
+// ── Floating button ───────────────────────────────────────────────────────────
+.chatbot-fab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 1000;
+
+  .chatbot-fab__btn {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: $primary;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(229, 9, 20, 0.45);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s;
+    outline: none;
+
+    svg {
+      font-size: 26px;
+      color: #fff;
+      transition: transform 0.3s ease;
+    }
+
+    &:hover {
+      background: $primary-dark;
+      transform: scale(1.08);
+      box-shadow: 0 6px 22px rgba(229, 9, 20, 0.55);
+    }
+
+    &--open svg {
+      transform: rotate(90deg);
+    }
+  }
+
+  // Pulse animation khi chưa mở
+  .chatbot-fab__pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid rgba(229, 9, 20, 0.4);
+    animation: chatbot-pulse 2s ease-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes chatbot-pulse {
+    0%   { transform: scale(1);   opacity: 0.7; }
+    70%  { transform: scale(1.35); opacity: 0; }
+    100% { transform: scale(1.35); opacity: 0; }
+  }
+}
+
+// ── Chat window ───────────────────────────────────────────────────────────────
+.chatbot-window {
+  position: fixed;
+  bottom: 96px;
+  right: 28px;
+  width: 370px;
+  height: 560px; // dùng height thay max-height để resize hoạt động đúng
+  min-width: 280px;
+  min-height: 360px;
+  max-width: 680px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: $radius-lg;
+  background: $bg-chat;
+  box-shadow: $shadow;
+  z-index: 1001;
+  overflow: hidden;
+
+  // Slide-up animation
+  animation: chatbot-slide-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  @keyframes chatbot-slide-up {
+    from { opacity: 0; transform: translateY(24px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  // ── Resize handles ──────────────────────────────────────────────────────────
+  // Cạnh trái — kéo theo chiều ngang
+  &__resize-left {
+    position: absolute;
+    left: 0;
+    top: $radius-lg;
+    bottom: $radius-lg;
+    width: 6px;
+    cursor: ew-resize;
+    z-index: 10;
+    border-radius: 6px 0 0 6px;
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 2px;
+      height: 28px;
+      background: rgba(0, 0, 0, 0.12);
+      border-radius: 2px;
+      transition: background 0.2s;
+    }
+
+    &:hover::after {
+      background: $primary;
+    }
+  }
+
+  // Cạnh trên — kéo theo chiều dọc
+  &__resize-top {
+    position: absolute;
+    top: 0;
+    left: $radius-lg;
+    right: $radius-lg;
+    height: 6px;
+    cursor: ns-resize;
+    z-index: 10;
+    border-radius: 0 0 0 0;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 2px;
+      width: 28px;
+      background: rgba(0, 0, 0, 0.12);
+      border-radius: 2px;
+      transition: background 0.2s;
+    }
+
+    &:hover::after {
+      background: $primary;
+    }
+  }
+
+  // ── Header ─────────────────────────────────────────────────────────────────
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: $bg-header;
+    flex-shrink: 0;
+
+    &-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: $primary;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      svg {
+        font-size: 18px;
+        color: #fff;
+      }
+    }
+
+    &-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    &-status {
+      font-size: 11px;
+      color: #4caf50;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      &::before {
+        content: "";
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #4caf50;
+      }
+    }
+
+    &-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: #aaa;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+      outline: none;
+
+      &:hover { color: #fff; }
+    }
+  }
+
+  // ── Messages list ───────────────────────────────────────────────────────────
+  &__messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb {
+      background: #ddd;
+      border-radius: 4px;
+    }
+  }
+
+  // ── Single message ──────────────────────────────────────────────────────────
+  &__msg {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    animation: chatbot-msg-in 0.2s ease both;
+
+    @keyframes chatbot-msg-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    &--bot {
+      align-self: flex-start;
+      max-width: 85%;
+    }
+
+    &--user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+      max-width: 80%;
+    }
+
+    &-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: $primary;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-bottom: 2px;
+
+      svg { font-size: 13px; color: #fff; }
+    }
+
+    &-bubble {
+      padding: 10px 14px;
+      border-radius: $radius-msg;
+      font-size: 13.5px;
+      line-height: 1.55;
+      word-break: break-word;
+
+      // Bot bubble
+      .chatbot-window__msg--bot & {
+        background: $bg-bot-msg;
+        color: $text-main;
+        border-bottom-left-radius: 4px;
+      }
+
+      // User bubble
+      .chatbot-window__msg--user & {
+        background: $bg-user-msg;
+        color: #fff;
+        border-bottom-right-radius: 4px;
+      }
+
+      // Markdown rendered content
+      p { margin: 0 0 6px; &:last-child { margin-bottom: 0; } }
+      strong { font-weight: 700; }
+      em { font-style: italic; }
+
+      // ── Link chung (cả bot lẫn user bubble) ────────────────────────────────
+      a, .chatbot-link {
+        text-decoration: underline;
+        opacity: 0.9;
+        cursor: pointer;
+        transition: opacity 0.15s;
+        
+        &:hover { opacity: 1; }
+      }
+
+      // ── Link trong bot bubble: màu đỏ, gạch dưới đỏ ─────────────────────
+      .chatbot-window__msg--bot & a,
+      .chatbot-window__msg--bot & .chatbot-link {
+        color: $primary;
+        text-decoration: underline;
+        text-decoration-color: $primary;
+        font-weight: bold;
+
+        &:hover {
+          color: $primary-dark;
+          text-decoration-color: $primary-dark;
+        }
+      }
+
+      // ── Link trong user bubble: màu trắng, gạch dưới trắng ───────────────
+      .chatbot-window__msg--user & a,
+      .chatbot-window__msg--user & .chatbot-link {
+        color: #fff;
+        text-decoration-color: rgba(255, 255, 255, 0.7);
+      }
+
+      ul, ol {
+        margin: 4px 0 4px 16px;
+        padding: 0;
+        li { margin-bottom: 2px; }
+      }
+    }
+
+    // ── Thinking bubble (hiển thị dots thay vì text) ────────────────────────
+    &-bubble--thinking {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      min-width: 56px;
+
+      .chatbot-thinking-dots {
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+
+        span {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: $primary;
+          animation: chatbot-dot-bounce 1.2s ease-in-out infinite;
+
+          &:nth-child(2) { animation-delay: 0.2s; }
+          &:nth-child(3) { animation-delay: 0.4s; }
+        }
+      }
+    }
+  }
+
+  // ── Typing / status indicator (chỉ còn dùng cho "Đang trả lời...") ─────────
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px 6px;
+    font-size: 12px;
+    color: $text-muted;
+    min-height: 24px;
+
+    &-dot {
+      display: inline-flex;
+      gap: 3px;
+
+      span {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: $primary;
+        animation: chatbot-dot-bounce 1.2s ease-in-out infinite;
+
+        &:nth-child(2) { animation-delay: 0.2s; }
+        &:nth-child(3) { animation-delay: 0.4s; }
+      }
+    }
+  }
+
+  @keyframes chatbot-dot-bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+    40%            { transform: translateY(-5px); opacity: 1; }
+  }
+
+  // ── Input area ──────────────────────────────────────────────────────────────
+  &__input-area {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px 12px 12px;
+    border-top: 1px solid $border;
+    background: $bg-chat;
+    flex-shrink: 0;
+  }
+
+  &__textarea {
+    flex: 1;
+    resize: none;
+    border: 1.5px solid $border;
+    border-radius: 20px;
+    padding: 9px 14px;
+    font-size: 13.5px;
+    font-family: inherit;
+    line-height: 1.4;
+    max-height: 100px;
+    outline: none;
+    transition: border-color 0.2s;
+    color: $text-main;
+    background: #fafafa;
+
+    // Ẩn spinner/mũi tên cuộn ở các trình duyệt
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+
+    // Ẩn scrollbar bên trong textarea
+    overflow-y: auto;
+    &::-webkit-scrollbar { display: none; }
+    scrollbar-width: none;
+
+    // Ẩn nút tăng/giảm trên số (phòng thủ thêm)
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    &::placeholder { color: #bbb; }
+
+    &:focus {
+      border-color: $primary;
+      background: #fff;
+    }
+
+    &:disabled {
+      background: #f0f0f0;
+      color: #aaa;
+    }
+  }
+
+  &__send-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: $primary;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.15s;
+    outline: none;
+
+    svg { font-size: 16px; }
+
+    &:hover:not(:disabled) {
+      background: $primary-dark;
+      transform: scale(1.05);
+    }
+
+    &:disabled {
+      background: #ddd;
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+}
+
+// ── Welcome bubble ─────────────────────────────────────────────────────────────
+.chatbot-welcome {
+  &__title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: $text-main;
+  }
+
+  &__sub {
+    font-size: 12.5px;
+    color: $text-muted;
+  }
+}
+
+// ── Quick suggestions ──────────────────────────────────────────────────────────
+.chatbot-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+
+  &__btn {
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 14px;
+    border: 1.5px solid $primary;
+    background: transparent;
+    color: $primary;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+
+    &:hover {
+      background: $primary;
+      color: #fff;
+    }
+  }
+}
+
+// ── Responsive ─────────────────────────────────────────────────────────────────
+@media (max-width: 480px) {
+  .chatbot-window {
+    width: calc(100vw - 24px) !important; // override inline resize style
+    right: 12px;
+    bottom: 80px;
+    max-height: 70vh;
+  }
+
+  .chatbot-fab {
+    bottom: 16px;
+    right: 16px;
+  }
+}

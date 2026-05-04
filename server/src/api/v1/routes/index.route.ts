@@ -13,6 +13,7 @@ import showTimeRoutes from "./showTime.route";
 import commentRoutes from "./comment.route";
 import orderRoutes from "./order.route";
 import dashboardRoutes from "./dashboard.route"; 
+import chatbotRoutes from "./chatbot.route";
 
 const mainV1Routes = (app: Express) => {
   const version = "/api/v1";
@@ -33,6 +34,7 @@ const mainV1Routes = (app: Express) => {
   app.use(version + "/orders", orderRoutes);
   app.use(version + "/upload", uploadRoutes);
   app.use(version + "/dashboard", dashboardRoutes); 
+  app.use(version + "/chatbot", chatbotRoutes);
 };
 
 export default mainV1Routes;
