@@ -145,4 +145,9 @@ export const API_ENDPOINTS = {
     SEAT_TYPE_STATS: "/dashboard/seat-type-stats",
     FORMAT_STATS: "/dashboard/format-stats",
   },
+
+  // Chatbot
+  CHATBOT: {
+  SEND: "/chatbot",
+  },
 };

@@ -13,6 +13,103 @@
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
+
+// ── Nút Mua Vé dưới poster ──────────────────────────────────────
+      .buy-ticket-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-top: 16px;
+      }
+
+      // Container bọc ngoài nút để căn chỉnh hiệu ứng pulse
+      .buy-ticket-container {
+        position: relative;
+        width: 80%;
+      }
+
+      // Hiệu ứng toả vòng (Pulse animation) giống Chatbot
+      .buy-ticket-pulse {
+        position: absolute;
+        inset: -4px; // Tăng kích thước bao quanh nút
+        border-radius: 14px;
+        border: 2px solid rgba(255, 77, 79, 0.4);
+        animation: buyticket-pulse 2s ease-out infinite;
+        pointer-events: none;
+        z-index: 0;
+        transition: border-color 0.3s ease;
+      }
+
+      // Đổi màu viền pulse sang xanh khi hover chuột vào vùng nút
+      .buy-ticket-container:hover .buy-ticket-pulse {
+        border-color: rgba(22, 119, 255, 0.4);
+      }
+
+      @keyframes buyticket-pulse {
+        0%   { transform: scale(1);   opacity: 0.7; }
+        70%  { transform: scale(1.06, 1.35); opacity: 0; }
+        100% { transform: scale(1.06, 1.35); opacity: 0; }
+      }
+
+      // Nút bấm chính
+      .buy-ticket-btn {
+        position: relative;
+        z-index: 1; // Nổi lên trên lớp pulse
+        overflow: hidden;
+        width: 100%; // Chiếm 100% của container (container đã là 80%)
+        padding: 14px 0;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: #fff;
+        background: #ff4d4f;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(255, 77, 79, 0.45);
+        transition:
+          background 0.3s ease,
+          box-shadow 0.3s ease,
+          transform 0.15s ease;
+
+        // Hover: đổi sang xanh
+        &:hover {
+          background: #1677ff;
+          box-shadow: 0 6px 20px rgba(22, 119, 255, 0.45);
+          transform: translateY(-2px);
+        }
+
+        &:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(22, 119, 255, 0.3);
+        }
+
+        // Ripple effect khi click — tạo bằng ::after pseudo
+        &::after {
+          content: "";
+          display: block;
+          position: absolute;
+          border-radius: 50%;
+          width: 0;
+          height: 0;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(255, 255, 255, 0.35);
+          opacity: 0;
+          pointer-events: none;
+          transition: none;
+        }
+
+        &:active::after {
+          width: 300px;
+          height: 300px;
+          opacity: 0;
+          transition:
+            width 0.5s ease,
+            height 0.5s ease,
+            opacity 0.5s ease;
+        }
+      }
     }
 
     .film-info {

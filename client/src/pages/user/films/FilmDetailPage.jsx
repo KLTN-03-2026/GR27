@@ -19,6 +19,7 @@ import {
   Empty,
   Tooltip,
   Collapse,
+  Popconfirm,
 } from "antd";
 import {
   CalendarOutlined,
@@ -28,18 +29,23 @@ import {
   EnvironmentOutlined,
   FlagOutlined,
   RightOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/vi";
 
 import YouTubeTrailer from "../../../components/YouTubeTrailer";
+import CommentForm from "../../../components/Form/CommentForm";
 import { getFilmBySlug } from "../../../services/filmServices";
 import { getAllCity } from "../../../services/cityServices";
 import {
   getCommentByFilmId,
   createComment,
   reportComment,
+  updateComment,
+  deleteComment,
 } from "../../../services/commentServices";
 import { getShowTimeByFilmId } from "../../../services/showTimeServices";
 import { useSelector } from "react-redux";
@@ -86,10 +92,16 @@ const FilmDetailPage = () => {
   const [commentLoading, setCommentLoading] = useState(false);
   const [hasMoreComments, setHasMoreComments] = useState(true);
 
-  // Comment form
+  // Comment form (tạo mới)
   const [rating, setRating] = useState(0);
   const [commentContent, setCommentContent] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
+
+  // Edit comment modal
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingComment, setEditingComment] = useState(null);
+  const [updatingComment, setUpdatingComment] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
 
   // Tab state
   const [activeTab, setActiveTab] = useState("info");
@@ -123,7 +135,7 @@ const FilmDetailPage = () => {
           const hcmCity = cityResult.find(
             (city) =>
               city.name === "TP. Hồ Chí Minh" ||
-              city.name.includes("Hồ Chí Minh")
+              city.name.includes("Hồ Chí Minh"),
           );
           if (hcmCity) {
             setSelectedCityId(hcmCity._id);
@@ -152,8 +164,8 @@ const FilmDetailPage = () => {
           ...dateGroup,
           cinemas: dateGroup.cinemas.filter((cinemaGroup) =>
             cinemaGroup.cinema.cities.some(
-              (city) => city._id === selectedCityId
-            )
+              (city) => city._id === selectedCityId,
+            ),
           ),
         }))
         .filter((dateGroup) => dateGroup.cinemas.length > 0);
@@ -181,7 +193,7 @@ const FilmDetailPage = () => {
 
       try {
         setCommentLoading(true);
-        const result = await getCommentByFilmId(filmData._id);
+        const result = await getCommentByFilmId(filmData._id, page);
 
         if (append) {
           setComments((prev) => [...prev, ...(result.data || [])]);
@@ -191,7 +203,7 @@ const FilmDetailPage = () => {
 
         setCommentTotal(result.pagination?.total || 0);
         setHasMoreComments(
-          result.pagination?.page < result.pagination?.totalPages
+          result.pagination?.page < result.pagination?.totalPages,
         );
       } catch (err) {
         console.error("Error fetching comments:", err);
@@ -199,7 +211,7 @@ const FilmDetailPage = () => {
         setCommentLoading(false);
       }
     },
-    [filmData]
+    [filmData],
   );
 
   // Load more comments
@@ -211,7 +223,7 @@ const FilmDetailPage = () => {
     }
   };
 
-  // Submit comment
+  // Submit comment (tạo mới)
   const handleSubmitComment = async () => {
     if (!isAuthenticated) {
       messageApi.warning("Vui lòng đăng nhập để đánh giá");
@@ -254,6 +266,54 @@ const FilmDetailPage = () => {
     }
   };
 
+  // Mở modal sửa bình luận
+  const handleOpenEditComment = (comment) => {
+    setEditingComment(comment);
+    setEditModalOpen(true);
+  };
+
+  // Submit sửa bình luận
+  const handleUpdateComment = async (values) => {
+    if (!editingComment) return;
+    try {
+      setUpdatingComment(true);
+      await updateComment(editingComment._id, {
+        rate: values.rate,
+        content: values.content,
+      });
+      messageApi.success("Cập nhật bình luận thành công");
+      setEditModalOpen(false);
+      setEditingComment(null);
+      setCommentPage(1);
+      fetchComments(1, false);
+    } catch (err) {
+      console.error("Error updating comment:", err);
+      messageApi.error(
+        err.response?.data?.message || "Không thể cập nhật bình luận",
+      );
+    } finally {
+      setUpdatingComment(false);
+    }
+  };
+
+  // Xóa bình luận
+  const handleDeleteComment = async (commentId) => {
+    try {
+      setDeletingCommentId(commentId);
+      await deleteComment(commentId);
+      messageApi.success("Đã xóa bình luận");
+      setComments((prev) => prev.filter((c) => c._id !== commentId));
+      setCommentTotal((prev) => prev - 1);
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+      messageApi.error(
+        err.response?.data?.message || "Không thể xóa bình luận",
+      );
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
+
   // Report comment
   const handleReportComment = async (commentId) => {
     if (!isAuthenticated) {
@@ -268,7 +328,7 @@ const FilmDetailPage = () => {
     } catch (err) {
       console.error("Error reporting comment:", err);
       messageApi.error(
-        err.response?.data?.message || "Không thể báo cáo bình luận"
+        err.response?.data?.message || "Không thể báo cáo bình luận",
       );
     }
   };
@@ -283,10 +343,9 @@ const FilmDetailPage = () => {
     fetchShowtimes();
   };
 
-  // Handle buy ticket - scroll to showtimes tab
+  // Handle buy ticket
   const handleBuyTicket = () => {
     setActiveTab("showtimes");
-    // Scroll xuống phần tabs
     setTimeout(() => {
       const tabsElement = document.querySelector(".film-content");
       if (tabsElement) {
@@ -320,6 +379,14 @@ const FilmDetailPage = () => {
     }
   }, [location]);
 
+  // Helper: kiểm tra comment có phải của user hiện tại không
+  const isOwnComment = (comment) => {
+    if (!isAuthenticated || !user) return false;
+    const commentUserId =
+      typeof comment.userId === "object" ? comment.userId?._id : comment.userId;
+    return commentUserId === user._id;
+  };
+
   // Render age rating
   const renderAgeRating = (ageRating) => {
     const ageConfig = {
@@ -338,6 +405,60 @@ const FilmDetailPage = () => {
       >
         {config.text}
       </Tag>
+    );
+  };
+
+  // Render nút action bên phải mỗi comment
+  const renderCommentActions = (comment) => {
+    if (isOwnComment(comment)) {
+      // Bình luận của chính user: hiện Sửa + Xóa
+      return (
+        <Space size="small">
+          <Tooltip title="Chỉnh sửa bình luận">
+            <Button
+              type="text"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleOpenEditComment(comment)}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Xóa bình luận"
+            description="Bạn có chắc muốn xóa bình luận này không?"
+            onConfirm={() => handleDeleteComment(comment._id)}
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
+          >
+            <Tooltip title="Xóa bình luận">
+              <Button
+                type="text"
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+                loading={deletingCommentId === comment._id}
+              />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      );
+    }
+
+    // Bình luận của người khác: hiện nút Flag (hoặc tag đã báo cáo)
+    if (comment.isReported === true) {
+      return <Tag color="green">Đã bị báo cáo</Tag>;
+    }
+
+    return (
+      <Tooltip title="Báo cáo bình luận">
+        <Button
+          type="text"
+          danger
+          size="small"
+          icon={<FlagOutlined />}
+          onClick={() => handleReportComment(comment._id)}
+        />
+      </Tooltip>
     );
   };
 
@@ -367,6 +488,14 @@ const FilmDetailPage = () => {
                     <div>
                       <div style={{ fontWeight: "bold" }}>
                         {comment.userId?.username || "Người dùng"}
+                        {isOwnComment(comment) && (
+                          <Tag
+                            color="blue"
+                            style={{ marginLeft: 8, fontSize: "11px" }}
+                          >
+                            Bạn
+                          </Tag>
+                        )}
                       </div>
                       <Space size="small">
                         <Rate
@@ -381,23 +510,7 @@ const FilmDetailPage = () => {
                     </div>
                   </Space>
 
-                  {comment.isReported === true ? (
-                    <>
-                      <Tag color="green">Đã bị báo cáo</Tag>
-                    </>
-                  ) : (
-                    <>
-                      <Tooltip title="Báo cáo bình luận">
-                        <Button
-                          type="text"
-                          danger
-                          size="small"
-                          icon={<FlagOutlined />}
-                          onClick={() => handleReportComment(comment._id)}
-                        />
-                      </Tooltip>
-                    </>
-                  )}
+                  {renderCommentActions(comment)}
                 </div>
 
                 <Paragraph style={{ marginBottom: 0, marginLeft: "48px" }}>
@@ -430,27 +543,21 @@ const FilmDetailPage = () => {
     }));
   };
 
-  // ✅ Lấy danh sách brands động với logo từ parentId
   const getBrands = () => {
     if (!showtimesData?.showtimes || !selectedDate) return [];
 
     const dateGroup = showtimesData.showtimes.find(
-      (group) => group.date === selectedDate
+      (group) => group.date === selectedDate,
     );
-
     if (!dateGroup) return [];
 
     const brandsMap = new Map();
-
     dateGroup.cinemas.forEach((cinemaGroup) => {
       const cinema = cinemaGroup.cinema;
-
-      // Ưu tiên lấy thông tin từ parentId (rạp cha/thương hiệu)
       if (cinema.parentId) {
         const brandId = cinema.parentId._id || cinema.parentId;
         const brandName = cinema.parentId.name || cinema.brandName;
         const brandLogo = cinema.parentId.avatar || cinema.avatar;
-
         if (!brandsMap.has(brandId)) {
           brandsMap.set(brandId, {
             id: brandId,
@@ -459,7 +566,6 @@ const FilmDetailPage = () => {
           });
         }
       } else if (cinema.brandName) {
-        // Fallback: nếu không có parentId, dùng brandName
         if (!brandsMap.has(cinema.brandName)) {
           brandsMap.set(cinema.brandName, {
             id: cinema.brandName,
@@ -469,43 +575,31 @@ const FilmDetailPage = () => {
         }
       }
     });
-
     return Array.from(brandsMap.values());
   };
 
-  // Get cinemas for selected date and brand
   const getCinemasForDateAndBrand = () => {
     if (!showtimesData?.showtimes || !selectedDate) return [];
 
     const dateGroup = showtimesData.showtimes.find(
-      (group) => group.date === selectedDate
+      (group) => group.date === selectedDate,
     );
-
     if (!dateGroup) return [];
 
-    if (selectedBrand === "all") {
-      return dateGroup.cinemas;
-    }
+    if (selectedBrand === "all") return dateGroup.cinemas;
 
     return dateGroup.cinemas.filter((cinemaGroup) => {
       const cinema = cinemaGroup.cinema;
-
-      // So sánh với parentId hoặc brandName
       if (cinema.parentId) {
         const brandId = cinema.parentId._id || cinema.parentId;
         return brandId === selectedBrand;
       }
-
       return cinema.brandName === selectedBrand;
     });
   };
 
-  // Format showtime
-  const formatShowtime = (startTime) => {
-    return dayjs(startTime).format("HH:mm");
-  };
+  const formatShowtime = (startTime) => dayjs(startTime).format("HH:mm");
 
-  // Render showtimes tab
   const renderShowtimesTab = () => {
     if (!selectedCityId) {
       return (
@@ -534,7 +628,6 @@ const FilmDetailPage = () => {
 
     return (
       <div className="showtimes-tab-new">
-        {/* City Selector */}
         <div className="city-selector">
           <Select
             showSearch
@@ -558,7 +651,6 @@ const FilmDetailPage = () => {
           />
         </div>
 
-        {/* Date Selector */}
         <div className="date-selector-horizontal">
           <Button
             className="scroll-btn"
@@ -574,9 +666,7 @@ const FilmDetailPage = () => {
               <Button
                 key={date.value}
                 type={selectedDate === date.value ? "primary" : "default"}
-                className={`date-button ${
-                  selectedDate === date.value ? "active" : ""
-                }`}
+                className={`date-button ${selectedDate === date.value ? "active" : ""}`}
                 onClick={() => {
                   setSelectedDate(date.value);
                   setSelectedBrand("all");
@@ -603,13 +693,10 @@ const FilmDetailPage = () => {
           />
         </div>
 
-        {/* Brand Filter - Dynamic */}
         <div className="brand-filter">
           <div className="brand-tabs">
             <div
-              className={`brand-tab-item ${
-                selectedBrand === "all" ? "active" : ""
-              }`}
+              className={`brand-tab-item ${selectedBrand === "all" ? "active" : ""}`}
               onClick={() => setSelectedBrand("all")}
             >
               <div className="brand-icon-square">
@@ -620,9 +707,7 @@ const FilmDetailPage = () => {
             {brands.map((brand) => (
               <div
                 key={brand.id}
-                className={`brand-tab-item ${
-                  selectedBrand === brand.id ? "active" : ""
-                }`}
+                className={`brand-tab-item ${selectedBrand === brand.id ? "active" : ""}`}
                 onClick={() => setSelectedBrand(brand.id)}
               >
                 <div className="brand-icon-square">
@@ -640,7 +725,6 @@ const FilmDetailPage = () => {
           </div>
         </div>
 
-        {/* Cinema List with Collapse */}
         <div className="cinema-list-collapse">
           {cinemas.length === 0 ? (
             <Empty description="Không có rạp nào trong danh mục này" />
@@ -708,10 +792,8 @@ const FilmDetailPage = () => {
     );
   };
 
-  // Loading state
+  // Loading / Error / No data
   if (loading) return <Loading tip="Đang tải thông tin phim..." />;
-
-  // Error state
   if (error) {
     return (
       <div style={{ padding: "20px" }}>
@@ -719,8 +801,6 @@ const FilmDetailPage = () => {
       </div>
     );
   }
-
-  // No film data
   if (!filmData) {
     return (
       <div style={{ padding: "20px" }}>
@@ -769,7 +849,6 @@ const FilmDetailPage = () => {
                     suffixIcon={<EnvironmentOutlined />}
                   />
                 </Col>
-
                 <Col xs={24} md={8}>
                   <Button
                     color="primary"
@@ -805,7 +884,6 @@ const FilmDetailPage = () => {
                         style={{ fontSize: "24px" }}
                       />
                     </div>
-
                     <div>
                       <Text>Nội dung bình luận</Text>
                       <TextArea
@@ -817,7 +895,6 @@ const FilmDetailPage = () => {
                         showCount
                       />
                     </div>
-
                     <Button
                       type="primary"
                       onClick={handleSubmitComment}
@@ -879,7 +956,6 @@ const FilmDetailPage = () => {
                     style={{ fontSize: "24px" }}
                   />
                 </div>
-
                 <div>
                   <Text>Nội dung bình luận</Text>
                   <TextArea
@@ -891,7 +967,6 @@ const FilmDetailPage = () => {
                     showCount
                   />
                 </div>
-
                 <Button
                   type="primary"
                   onClick={handleSubmitComment}
@@ -920,7 +995,6 @@ const FilmDetailPage = () => {
               </div>
             </Card>
           )}
-
           {renderCommentsList()}
         </div>
       ),
@@ -930,16 +1004,47 @@ const FilmDetailPage = () => {
   return (
     <>
       {contextHolder}
+
+      {/* Modal chỉnh sửa bình luận */}
+      <CommentForm
+        open={editModalOpen}
+        onCancel={() => {
+          setEditModalOpen(false);
+          setEditingComment(null);
+        }}
+        onFinish={handleUpdateComment}
+        initialValues={
+          editingComment
+            ? { rate: editingComment.rate, content: editingComment.content }
+            : null
+        }
+        loading={updatingComment}
+      />
+
       <div className="film-detail-page">
         {/* Film Header */}
         <div className="film-header">
           <Row gutter={[24, 24]}>
+            {/* ── CỘT POSTER ── */}
             <Col xs={24} md={8}>
               <div className="film-poster">
                 <img src={filmData.thumbnail} alt={filmData.title} />
+                {/* Nút Mua Vé dưới poster, cân giữa, có ripple + hover xanh */}
+                <div className="buy-ticket-wrapper">
+                  <div className="buy-ticket-container">
+                    <span className="buy-ticket-pulse" />
+                    <button
+                      className="buy-ticket-btn"
+                      onClick={handleBuyTicket}
+                    >
+                      Mua vé
+                    </button>
+                  </div>
+                </div>
               </div>
             </Col>
 
+            {/* ── CỘT THÔNG TIN ── */}
             <Col xs={24} md={16}>
               <div className="film-info">
                 <Title level={1}>{filmData.title}</Title>
@@ -952,6 +1057,7 @@ const FilmDetailPage = () => {
 
                 <Divider />
 
+                {/* Rating + Độ tuổi + Định dạng — tất cả inline 1 hàng ngang */}
                 <Space size="large" wrap>
                   <Space>
                     <StarOutlined style={{ color: "#faad14" }} />
@@ -967,25 +1073,30 @@ const FilmDetailPage = () => {
                     <Text type="secondary">({comments.length} đánh giá)</Text>
                   </Space>
 
-                  <Space direction="vertical" size={0}>
+                  {/* Độ tuổi inline */}
+                  <Space size={4} align="center">
                     <Text type="secondary" style={{ fontSize: "12px" }}>
-                      Độ tuổi
+                      Độ tuổi:
                     </Text>
                     {renderAgeRating(filmData.ageRating)}
                   </Space>
 
-                  <Space direction="vertical" size={0}>
-                    <Text type="secondary" style={{ fontSize: "12px" }}>
-                      Định dạng
-                    </Text>
-                    <Space>
-                      {filmData.availableFormats?.map((format) => (
-                        <Tag key={format} color="blue">
-                          {format}
-                        </Tag>
-                      ))}
-                    </Space>
-                  </Space>
+                  {/* Định dạng inline */}
+                  {filmData.availableFormats &&
+                    filmData.availableFormats.length > 0 && (
+                      <Space size={4} align="center">
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          Định dạng:
+                        </Text>
+                        <Space size={4}>
+                          {filmData.availableFormats.map((format) => (
+                            <Tag key={format} color="blue">
+                              {format}
+                            </Tag>
+                          ))}
+                        </Space>
+                      </Space>
+                    )}
                 </Space>
 
                 <Divider />
@@ -1029,7 +1140,14 @@ const FilmDetailPage = () => {
 
                 <Divider />
 
-                <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "20px",
+                    flexWrap: "wrap",
+                  }}
+                >
                   <div>
                     <Text type="secondary">Thể loại: </Text>
                     <Space wrap>
@@ -1042,15 +1160,6 @@ const FilmDetailPage = () => {
                       ))}
                     </Space>
                   </div>
-                  <Button
-                    type="primary"
-                    danger
-                    size="large"
-                    onClick={handleBuyTicket}
-                    style={{ fontWeight: "bold" }}
-                  >
-                    Mua vé
-                  </Button>
                 </div>
 
                 <Divider />
