@@ -8,7 +8,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 .pnpm-store/
-
+source_dump*
 # Environment secrets
 .env
 .env.*
