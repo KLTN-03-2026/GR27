@@ -83,7 +83,12 @@ export const createOrder = async (userId: string, payload: ICreateOrderPayload) 
 
     const seatKeys = seats.map((s) => s.seatKey);
     let seatSubtotal = 0;
-    const validatedSeats = [];
+    const validatedSeats: {
+  seatKey: string;
+  type: string;
+  unitPrice: number;
+  partnerSeatKey?: string;
+}[] = [];
     const processedCoupleSeats = new Set<string>();
 
     for (const seatKey of seatKeys) {
@@ -138,7 +143,12 @@ export const createOrder = async (userId: string, payload: ICreateOrderPayload) 
 
     // 3. Validate combo foods
     let comboSubtotal = 0;
-    const validatedComboFoods = [];
+    const validatedComboFoods: {
+  comboFoodId: unknown;
+  name: string;
+  price: number;
+  quantity: number;
+}[] = [];
 
     for (const combo of comboFoods) {
       const comboFood = await ComboFood.findOne({ _id: combo.comboFoodId, deleted: false }).session(session);
