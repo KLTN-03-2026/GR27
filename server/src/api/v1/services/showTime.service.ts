@@ -233,11 +233,19 @@ export const createShowTime = async (data: IShowTimeCreate) => {
   if (releaseDateError) throw { status: 400, message: releaseDateError };
 
   // 8. Kiểm tra xung đột thời gian (trùng lịch)
-  const hasConflict = await checkTimeConflict(data.roomId.toString(), data.startTime, data.endTime);
+  const hasConflict = await checkTimeConflict(
+  data.roomId.toString(),
+  new Date(data.startTime),  // ← thêm new Date()
+  new Date(data.endTime)     // ← thêm new Date()
+  );
   if (hasConflict) throw { status: 400, message: "Khoảng thời gian này bị trùng với suất chiếu khác trong cùng phòng" };
 
   // 9. Kiểm tra giãn cách 30 phút
-  const bufferError = await checkBufferConflict(data.roomId.toString(), data.startTime, data.endTime);
+  const bufferError = await checkBufferConflict(
+  data.roomId.toString(),
+  new Date(data.startTime),  // ← thêm new Date()
+  new Date(data.endTime)     // ← thêm new Date()
+);
   if (bufferError) throw { status: 400, message: bufferError };
 
   // 10. Snapshot seats từ room
