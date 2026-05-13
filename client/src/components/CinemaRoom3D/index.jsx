@@ -1,8 +1,8 @@
 // src/components/CinemaRoom3D/index.jsx
 import React, { useState, useCallback, Suspense, useEffect, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, useProgress } from '@react-three/drei';
-import { Button, Alert, Progress, message } from 'antd';
+import { OrbitControls  } from '@react-three/drei';
+import { Button, Alert, message } from 'antd';
 import {
   EyeOutlined, LeftOutlined, RightOutlined,
   RollbackOutlined, ExpandOutlined, CompressOutlined,
@@ -15,22 +15,7 @@ import FirstPersonView from './FirstPersonView';
 import useSeats3D from './useSeats3D';
 import './CinemaRoom3D.scss';
 
-// ==========================================
-// Loading Screen
-// ==========================================
-const LoadingScreen = () => {
-  const { progress } = useProgress();
-  return (
-    <div className="cinema3d-loading">
-      <div className="cinema3d-loading__inner">
-        <div className="cinema3d-loading__icon">🎬</div>
-        <div className="cinema3d-loading__text">Đang tải phòng chiếu 3D...</div>
-        <Progress percent={Math.round(progress)} strokeColor="#22c55e"
-          trailColor="rgba(255,255,255,0.1)" style={{ width: 260 }} />
-      </div>
-    </div>
-  );
-};
+
 
 // ==========================================
 // WASD Camera Controller (bên trong Canvas)
