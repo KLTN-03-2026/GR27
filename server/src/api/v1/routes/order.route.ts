@@ -31,9 +31,6 @@ router.post(
   orderController.createOrder
 );
 
-router.get("/webhook", (req, res) => {
-  res.status(200).json({ code: 200, message: "Webhook endpoint is active" });
-});
 
 
 // [POST] WEBHOOK FROM PAYOS (PUBLIC): /api/v1/orders/webhook

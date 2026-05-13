@@ -229,7 +229,12 @@ export const handlePaymentWebhook = async (webhookBody: any) => {
   const verifiedData = await verifyPaymentWebhookData(webhookBody);
   if (!verifiedData) throw { status: 400, message: "Invalid webhook signature" };
 
-  const { code, desc } = verifiedData;
+  const { code, desc, orderCode   } = verifiedData;
+
+  if (orderCode === 123) {
+    return { alreadyProcessed: true }; // hoặc return { isTest: true }
+  }
+
   const order = await Order.findOne({ transactionId: String(code) });
 
   if (!order) throw { status: 404, message: "Order not found" };
