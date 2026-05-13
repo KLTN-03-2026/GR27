@@ -12,7 +12,30 @@ import { CommonStatus } from "../../../types/common.type";
 // ── Khởi tạo Gemini client ────────────────────────────────────────────────────
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const MODEL = "gemini-3.1-flash-lite-preview";
+const PRIMARY_MODEL = "gemini-3.1-flash-lite-preview";
+const FALLBACK_MODEL = "gemini-2.5-flash";
+
+const isOverloadError = (err: any): boolean => {
+  const status = err?.status ?? err?.httpStatus ?? err?.response?.status;
+  const message: string = err?.message ?? "";
+  return (
+    status === 503 ||
+    status === 429 ||
+    message.includes("high demand") ||
+    message.includes("overloaded") ||
+    message.includes("Service Unavailable")
+  );
+};
+
+const getModel = (modelName: string) =>
+  genAI.getGenerativeModel({
+    model: modelName,
+    systemInstruction: buildSystemPrompt(
+      process.env.CLIENT_URL || "http://localhost:3000"
+    ),
+    tools: [{ functionDeclarations: CHATBOT_TOOLS }],
+  });
+
 
 // ── System prompt (nhận clientUrl động từ .env) ───────────────────────────────
 
@@ -607,31 +630,40 @@ export const processChatMessage = async (
   // Lấy CLIENT_URL từ .env để nhúng vào system prompt
   const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
 
-  // Khởi tạo model với system instruction và tools
-  const model = genAI.getGenerativeModel({
-    model: MODEL,
-    systemInstruction: buildSystemPrompt(clientUrl),
-    tools: [{ functionDeclarations: CHATBOT_TOOLS }],
-  });
+  // ── Helper: thử gọi Gemini với fallback model khi bị overload ─────────────
+  const withFallback = async <T>(
+    fn: (model: ReturnType<typeof getModel>) => Promise<T>
+  ): Promise<T> => {
+    try {
+      return await fn(getModel(PRIMARY_MODEL));
+    } catch (err: any) {
+      if (isOverloadError(err)) {
+        console.warn(
+          `[Chatbot] ${PRIMARY_MODEL} quá tải, chuyển sang ${FALLBACK_MODEL}`
+        );
+        return await fn(getModel(FALLBACK_MODEL));
+      }
+      throw err;
+    }
+  };
 
   // ── Bước 1: Gọi Gemini lần 1 — quyết định gọi tool nào ────────────────────
   onStatus("thinking");
 
-  const firstResult = await model.generateContent({
-    contents: [
-      ...trimmedHistory,
-      { role: "user", parts: [{ text: message }] },
-    ],
-  });
+  const firstResult = await withFallback((model) =>
+    model.generateContent({
+      contents: [
+        ...trimmedHistory,
+        { role: "user", parts: [{ text: message }] },
+      ],
+    })
+  );
 
   const firstResponse = firstResult.response;
   const firstContent = firstResponse.candidates?.[0]?.content;
   const firstPart = firstContent?.parts?.[0];
 
   // ── Bước 2: Nếu Gemini gọi tool → thực thi ────────────────────────────────
-  // FIX: additionalContents KHÔNG thêm message lần nữa.
-  // Lần gọi 2 sẽ build contents = [...trimmedHistory, userTurn, modelTurn, functionTurn]
-  // message chỉ xuất hiện đúng 1 lần ở userTurn để Gemini hiểu đúng ngữ cảnh hội thoại.
   const userTurn = { role: "user", parts: [{ text: message }] };
   let extraTurns: any[] = [];
 
@@ -641,9 +673,8 @@ export const processChatMessage = async (
 
     const toolResult = await executeToolCall(name, (args as Record<string, string>) || {});
 
-    // Dùng firstContent gốc (giữ thought_signature cho các model thinking)
     extraTurns = [
-      firstContent, // model turn: functionCall
+      firstContent,
       {
         role: "function",
         parts: [
@@ -657,23 +688,22 @@ export const processChatMessage = async (
       },
     ];
   } else {
-    // Không có tool call → Gemini đã trả lời trực tiếp từ lần 1
     const directText = firstPart?.text;
     if (directText) {
       onStatus("answering");
       onChunk(directText);
       return;
     }
-    // Fallback: tiếp tục gọi lần 2 không có function turn (edge case)
   }
 
   // ── Bước 3: Gọi Gemini lần 2 — sinh câu trả lời (có stream) ──────────────
-  // Thứ tự đúng: lịch sử cũ → user hỏi → model gọi tool → kết quả tool
   onStatus("answering");
 
-  const streamResult = await model.generateContentStream({
-    contents: [...trimmedHistory, userTurn, ...extraTurns],
-  });
+  const streamResult = await withFallback((model) =>
+    model.generateContentStream({
+      contents: [...trimmedHistory, userTurn, ...extraTurns],
+    })
+  );
 
   for await (const chunk of streamResult.stream) {
     const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text;
