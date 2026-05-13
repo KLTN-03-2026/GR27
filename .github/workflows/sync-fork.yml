@@ -1,0 +1,21 @@
+name: Sync Fork on Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync fork
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.FORK_SYNC_TOKEN }}
+          script: |
+            await github.rest.repos.mergeUpstream({
+              owner: 'kayzama',
+              repo: 'GR27',
+              branch: 'main'
+            })
