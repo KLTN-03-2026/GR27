@@ -18,7 +18,9 @@ export const getAllFilms = async (userRole?: string) => {
   if (!films || films.length === 0) {
     throw {
       status: 404,
-      message: isAdmin ? "Không tìm thấy film nào" : "Không có film nào công khai",
+      message: isAdmin
+        ? "Không tìm thấy film nào"
+        : "Không có film nào công khai",
     };
   }
 
@@ -32,23 +34,53 @@ export const getFilmBySlug = async (slug: string) => {
     deleted: false,
   }).populate({ path: "categoryIds", select: "title" });
 
-  if (!film) throw { status: 404, message: "Film không tồn tại hoặc chưa được công bố" };
+  if (!film)
+    throw { status: 404, message: "Film không tồn tại hoặc chưa được công bố" };
   return film;
 };
 
 export const getFilmById = async (id: string) => {
-  const film = await Film.findOne({ _id: id, deleted: false })
-    .populate({ path: "categoryIds", select: "title" });
+  const film = await Film.findOne({ _id: id, deleted: false }).populate({
+    path: "categoryIds",
+    select: "title",
+  });
 
   if (!film) throw { status: 404, message: "Không tìm thấy film" };
   return film;
 };
 
 export const createFilm = async (data: IFilmCreate) => {
+  // Check trùng title (không phân biệt hoa thường)
+  const existing = await Film.findOne({
+    title: { $regex: new RegExp(`^${data.title.trim()}$`, "i") },
+    deleted: false,
+  });
+
+  if (existing) {
+    throw {
+      status: 409,
+      message: `Phim "${data.title}" đã tồn tại trong hệ thống`,
+    };
+  }
   return Film.create(data);
 };
 
 export const updateFilm = async (id: string, data: IFilmUpdate) => {
+  if (data.title) {
+    const existing = await Film.findOne({
+      _id: { $ne: id }, // loại trừ chính film đang edit
+      title: { $regex: new RegExp(`^${data.title.trim()}$`, "i") },
+      deleted: false,
+    });
+
+    if (existing) {
+      throw {
+        status: 409,
+        message: `Phim "${data.title}" đã tồn tại trong hệ thống`,
+      };
+    }
+  }
+
   const film = await Film.findByIdAndUpdate(id, data, { new: true });
   if (!film) throw { status: 404, message: "Không tìm thấy film" };
   return film;
@@ -75,7 +107,8 @@ export const getTrashedFilms = async () => {
 // Xóa vĩnh viễn — check kỹ trước khi xóa
 export const permanentDeleteFilm = async (id: string) => {
   const film = await Film.findOne({ _id: id, deleted: true });
-  if (!film) throw { status: 404, message: "Không tìm thấy film trong thùng rác" };
+  if (!film)
+    throw { status: 404, message: "Không tìm thấy film trong thùng rác" };
 
   // Check showtime — kể cả deleted showtime vì order vẫn đang tham chiếu
   const showtimeCount = await ShowTime.countDocuments({ filmId: id });

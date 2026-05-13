@@ -37,10 +37,35 @@ export const getCinemaById = async (id: string) => {
 };
 
 export const createCinema = async (data: ICinemaCreate) => {
+    const existing = await Cinema.findOne({
+    name: { $regex: new RegExp(`^${data.name.trim()}$`, "i") },
+    deleted: false,
+  });
+
+  if (existing) {
+    throw {
+      status: 409,
+      message: `Rạp "${data.name}" đã tồn tại trong hệ thống`,
+    };
+  }
   return Cinema.create(data);
 };
 
 export const updateCinema = async (id: string, data: ICinemaUpdate) => {
+    if (data.name) {
+    const existing = await Cinema.findOne({
+      _id: { $ne: id },
+      name: { $regex: new RegExp(`^${data.name.trim()}$`, "i") },
+      deleted: false,
+    });
+
+    if (existing) {
+      throw {
+        status: 409,
+        message: `Rạp "${data.name}" đã tồn tại trong hệ thống`,
+      };
+    }
+  }
   const cinema = await Cinema.findByIdAndUpdate(id, data, { new: true });
   if (!cinema) throw { status: 404, message: "Không tìm thấy rạp chiếu" };
   return cinema;
