@@ -62,7 +62,7 @@ export const sendChatMessage = async (message, history, callbacks) => {
           onStatus(json.status, json.tool);
         }
       } catch {
-        // parse lỗi → bỏ qua chunk đó
+        
       }
     }
   }
