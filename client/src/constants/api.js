@@ -27,6 +27,11 @@ export const API_ENDPOINTS = {
     UPLOAD_POSTER: (id) => `/films/${id}/poster`,
   },
 
+  TMDB: {
+    SEARCH: "/tmdb/search",
+    DETAIL: (tmdbId) => `/tmdb/${tmdbId}`,
+  },
+
   // Category
   CATEGORIES: {
     LIST: "/categories",

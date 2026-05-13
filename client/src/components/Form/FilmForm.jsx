@@ -10,16 +10,29 @@ import {
   Upload,
   DatePicker,
   InputNumber,
+  AutoComplete,
+  Spin as SpinInline,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import ImgCrop from "antd-img-crop";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { getCategories } from "../../services/categoryServices";
+import {
+  searchTmdbFilms,
+  getTmdbFilmDetail,
+} from "../../services/tmdbServices";
 import useImageUpload from "../../hooks/useImageUpload";
 import dayjs from "dayjs";
 import { DEFAULT_IMAGES } from "../../constants";
 
 const { TextArea } = Input;
+
+// Bảng map tên TMDb genre → tên category trong DB của bạn
+// (chỉ cần khai báo những cái BỊ LỆCH tên, còn lại match 1-1)
+const TMDB_GENRE_MAP = {
+  Music: "Musical",
+  History: "Historical",
+};
 
 function FilmForm({
   onFinish,
@@ -31,7 +44,12 @@ function FilmForm({
   const [categories, setCategories] = useState([]);
   const initialValuesSetRef = useRef(false);
 
-  // Sử dụng useImageUpload hook
+  // TMDb states
+  const [tmdbOptions, setTmdbOptions] = useState([]);
+  const [tmdbSearching, setTmdbSearching] = useState(false);
+  const [tmdbLoading, setTmdbLoading] = useState(false);
+  const debounceRef = useRef(null);
+
   const {
     fileList,
     previewOpen,
@@ -39,6 +57,7 @@ function FilmForm({
     uploading,
     setPreviewOpen,
     setInitialImage,
+    forceSetImage,
     getFinalImageUrl,
     resetAll,
     uploadProps,
@@ -69,35 +88,26 @@ function FilmForm({
   // Set initial values chỉ một lần khi có dữ liệu từ props
   useEffect(() => {
     if (initialValues && !initialValuesSetRef.current) {
-      // Convert arrays thành string để hiển thị trong Input
       const formattedValues = { ...initialValues };
 
-      // Convert arrays thành string với dấu phẩy
       if (Array.isArray(initialValues.otherTitles)) {
         formattedValues.otherTitles = initialValues.otherTitles.join(", ");
       }
-
       if (Array.isArray(initialValues.actors)) {
         formattedValues.actors = initialValues.actors.join(", ");
       }
-
       if (Array.isArray(initialValues.directors)) {
         formattedValues.directors = initialValues.directors.join(", ");
       }
-
-      // Convert categoryIds từ object -> array string
       if (Array.isArray(initialValues.categoryIds)) {
         formattedValues.categoryIds = initialValues.categoryIds.map(
-          (c) => c._id
+          (c) => c._id,
         );
       }
-
-      // Set initial image using hook
       if (initialValues.thumbnail) {
         setInitialImage(initialValues.thumbnail);
       }
 
-      // Set form values
       form.setFieldsValue({
         ...formattedValues,
         releaseDate: initialValues.releaseDate
@@ -105,23 +115,176 @@ function FilmForm({
           : null,
       });
 
-      initialValuesSetRef.current = true; // Đánh dấu đã set xong
+      initialValuesSetRef.current = true;
     }
   }, [initialValues, form, setInitialImage]);
 
-  // Reset flag khi initialValues thay đổi
   useEffect(() => {
     initialValuesSetRef.current = false;
   }, [initialValues]);
 
+  // ── TMDb: Xử lý gõ vào field title ────────────────────────────────────────
+  const handleTitleSearch = useCallback(
+    (value) => {
+      form.setFieldValue("title", value);
+
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
+      if (!value || value.trim().length < 2) {
+        setTmdbOptions([]);
+        return;
+      }
+
+      debounceRef.current = setTimeout(async () => {
+        setTmdbSearching(true);
+        try {
+          const result = await searchTmdbFilms(value.trim());
+          const films = result?.data || [];
+
+          if (films.length === 0) {
+            setTmdbOptions([
+              {
+                value: value,
+                label: (
+                  <span style={{ color: "#999", fontStyle: "italic" }}>
+                    🎬 TMDb không tìm thấy phim phù hợp
+                  </span>
+                ),
+                disabled: true,
+              },
+            ]);
+          } else {
+            setTmdbOptions(
+              films.map((film) => ({
+                value: film.title,
+                tmdbId: film.tmdbId,
+                label: (
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    {film.thumbnail ? (
+                      <img
+                        src={film.thumbnail}
+                        alt=""
+                        style={{
+                          width: 32,
+                          height: 48,
+                          objectFit: "cover",
+                          borderRadius: 3,
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 32,
+                          height: 48,
+                          background: "#f0f0f0",
+                          borderRadius: 3,
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 500, fontSize: 13 }}>
+                        {film.title}
+                      </div>
+                      <div
+                        style={{ fontSize: 11, color: "#999", marginTop: 2 }}
+                      >
+                        {film.originalTitle !== film.title
+                          ? film.originalTitle
+                          : ""}
+                        {film.originalTitle !== film.title && film.releaseDate
+                          ? " • "
+                          : ""}
+                        {film.releaseDate?.slice(0, 4) || ""}
+                      </div>
+                    </div>
+                  </div>
+                ),
+              })),
+            );
+          }
+        } catch {
+          setTmdbOptions([]);
+        } finally {
+          setTmdbSearching(false);
+        }
+      }, 500);
+    },
+    [form],
+  );
+
+  // ── TMDb: Khi admin chọn phim từ dropdown ──────────────────────────────────
+  const handleTmdbSelect = useCallback(
+    async (value, option) => {
+      if (!option?.tmdbId || option.disabled) return;
+
+      setTmdbLoading(true);
+      try {
+        const result = await getTmdbFilmDetail(option.tmdbId);
+        const data = result?.data;
+        if (!data) return;
+
+        // Auto-map TMDb genres → categoryIds trong DB
+        const matchedCategoryIds = [];
+        const matchedGenreNames = [];
+
+        if (data.tmdbGenres && categories.length > 0) {
+          data.tmdbGenres.forEach((genreName) => {
+            // Áp dụng bảng map trước (với genre bị lệch tên)
+            const normalizedName = TMDB_GENRE_MAP[genreName] || genreName;
+
+            const matched = categories.find(
+              (cat) => cat.label.toLowerCase() === normalizedName.toLowerCase(),
+            );
+            if (matched) {
+              matchedCategoryIds.push(matched.value);
+              matchedGenreNames.push(matched.label);
+            }
+          });
+        }
+
+        // Auto-fill toàn bộ form
+        form.setFieldsValue({
+          title: data.title,
+          otherTitles: data.otherTitles || "",
+          description: data.description,
+          duration: data.duration || undefined,
+          releaseDate: data.releaseDate ? dayjs(data.releaseDate) : null,
+          actors: data.actors,
+          directors: data.directors,
+          filmLanguage: data.filmLanguage,
+          subtitles: data.subtitles,
+          ageRating: data.ageRating || undefined,
+          isTrending: data.isTrending,
+          trailer: data.trailer || "",
+          categoryIds: matchedCategoryIds,
+          availableFormats: ["2D"],         
+        });
+
+        // Set poster dùng forceSetImage (sẽ dùng externalImageUrl, không upload lại)
+        if (data.thumbnail) {
+          forceSetImage(data.thumbnail);
+        }
+
+        setTmdbOptions([]);
+      } catch (err) {
+        console.error("Lỗi load TMDb detail:", err);
+      } finally {
+        setTmdbLoading(false);
+      }
+    },
+    [form, categories, forceSetImage],
+  );
+
+  // ── Submit form ────────────────────────────────────────────────────────────
   const handleFinish = async (values) => {
-    console.log("Form values before processing:", values);
     try {
-      // Xử lý thumbnail bằng hook
       const thumbnailUrl = await getFinalImageUrl(initialValues?.thumbnail);
       values.thumbnail = thumbnailUrl;
 
-      // Convert string thành array cho otherTitles, actors, directors
       if (values.otherTitles) {
         values.otherTitles = values.otherTitles
           .split(",")
@@ -149,25 +312,20 @@ function FilmForm({
         values.directors = [];
       }
 
-      // ✅ Fix: Xử lý status đúng cách
-      // Nếu values.status là boolean thì convert sang string
-      if (typeof values.status === 'boolean') {
+      if (typeof values.status === "boolean") {
         values.status = values.status ? "active" : "inactive";
       }
-      // Nếu đã là string thì giữ nguyên
 
-      // Format releaseDate thành MongoDB Date
       if (values.releaseDate) {
         values.releaseDate = values.releaseDate.toDate();
       }
 
-      console.log("Values after processing:", values);
       const result = await onFinish(values);
 
-      // Chỉ reset form khi onFinish return true (thành công)
       if (result === true) {
         form.resetFields();
         resetAll();
+
         initialValuesSetRef.current = false;
       }
     } catch (error) {
@@ -175,23 +333,21 @@ function FilmForm({
     }
   };
 
-  // ✅ Fix: Tạo initialValues đúng cách
   const getInitialFormValues = () => {
     const defaultValues = {
-      status: "inactive", // ✅ Mặc định inactive cho form mới
+      status: "inactive",
       isTrending: false,
       availableFormats: [],
     };
-
-    // Nếu có initialValues (đang edit), ưu tiên initialValues
     if (initialValues) {
       return {
         ...defaultValues,
         ...initialValues,
-        releaseDate: initialValues.releaseDate ? dayjs(initialValues.releaseDate) : null,
+        releaseDate: initialValues.releaseDate
+          ? dayjs(initialValues.releaseDate)
+          : null,
       };
     }
-
     return defaultValues;
   };
 
@@ -203,16 +359,62 @@ function FilmForm({
       layout="vertical"
     >
       <Row gutter={[20, 5]}>
+        {/* ── Title + TMDb AutoComplete ── */}
         <Col span={24}>
           <Form.Item
             name="title"
-            label="Tên phim"
+            label={
+              <span>
+                Tên phim&nbsp;
+                <span
+                  style={{ fontWeight: 400, color: "#1677ff", fontSize: 12 }}
+                >
+                  — Gõ để tìm tự động từ TMDb
+                </span>
+              </span>
+            }
             rules={[{ required: true, message: "Vui lòng nhập tên phim" }]}
           >
-            <Input type="text" />
+            <AutoComplete
+              options={tmdbOptions}
+              onSearch={handleTitleSearch}
+              onSelect={handleTmdbSelect}
+              notFoundContent={null}
+              popupMatchSelectWidth={480}
+            >
+              <Input
+                placeholder="Nhập tên phim để tìm kiếm từ TMDb..."
+                suffix={
+                  tmdbSearching ? (
+                    <SpinInline size="small" />
+                  ) : (
+                    <span style={{ fontSize: 11, color: "#bbb" }}>TMDb</span>
+                  )
+                }
+              />
+            </AutoComplete>
           </Form.Item>
+
+          {/* Loading indicator khi đang fetch detail */}
+          {tmdbLoading && (
+            <div
+              style={{
+                marginTop: -12,
+                marginBottom: 8,
+                color: "#1677ff",
+                fontSize: 12,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <SpinInline size="small" />
+              Đang tải thông tin phim từ TMDb...
+            </div>
+          )}
         </Col>
 
+        {/* ── Other Titles ── */}
         <Col span={24}>
           <Form.Item
             name="otherTitles"
@@ -223,6 +425,7 @@ function FilmForm({
           </Form.Item>
         </Col>
 
+        {/* ── Category + Available Formats ── */}
         <Col span={12}>
           <Form.Item
             name="categoryIds"
@@ -232,7 +435,6 @@ function FilmForm({
             <Select
               mode="multiple"
               allowClear
-              key={categories.value}
               placeholder="Chọn thể loại"
               options={categories}
             />
@@ -260,6 +462,7 @@ function FilmForm({
           </Form.Item>
         </Col>
 
+        {/* ── Actors ── */}
         <Col span={24}>
           <Form.Item
             name="actors"
@@ -273,6 +476,7 @@ function FilmForm({
           </Form.Item>
         </Col>
 
+        {/* ── Directors ── */}
         <Col span={24}>
           <Form.Item
             name="directors"
@@ -286,6 +490,7 @@ function FilmForm({
           </Form.Item>
         </Col>
 
+        {/* ── Release Date + Duration ── */}
         <Col span={12}>
           <Form.Item
             name="releaseDate"
@@ -319,6 +524,7 @@ function FilmForm({
           </Form.Item>
         </Col>
 
+        {/* ── Age Rating + Language ── */}
         <Col span={12}>
           <Form.Item
             name="ageRating"
@@ -360,27 +566,25 @@ function FilmForm({
           </Form.Item>
         </Col>
 
+        {/* ── Subtitles ── */}
         <Col span={24}>
           <Form.Item name="subtitles" label="Phụ đề">
             <Input placeholder="Ví dụ: Tiếng Việt, English" />
           </Form.Item>
         </Col>
 
+        {/* ── Trailer ── */}
         <Col span={24}>
           <Form.Item
             name="trailer"
             label="Link Trailer"
-            rules={[
-              {
-                type: "url",
-                message: "Vui lòng nhập URL hợp lệ",
-              },
-            ]}
+            rules={[{ type: "url", message: "Vui lòng nhập URL hợp lệ" }]}
           >
             <Input placeholder="https://www.youtube.com/watch?v=..." />
           </Form.Item>
         </Col>
 
+        {/* ── Description ── */}
         <Col span={24}>
           <Form.Item
             name="description"
@@ -391,6 +595,7 @@ function FilmForm({
           </Form.Item>
         </Col>
 
+        {/* ── Upload Poster ── */}
         <Col span={12}>
           <Form.Item
             label="Upload Poster"
@@ -404,10 +609,7 @@ function FilmForm({
               showReset
               aspect={0.6999}
             >
-              <Upload
-                {...uploadProps}
-                loading={uploading}
-              >
+              <Upload {...uploadProps} loading={uploading}>
                 {fileList.length >= 1 ? null : (
                   <div>
                     <PlusOutlined />
@@ -427,7 +629,8 @@ function FilmForm({
                 preview={{
                   visible: previewOpen,
                   onVisibleChange: (visible) => setPreviewOpen(visible),
-                  afterOpenChange: (visible) => !visible && setPreviewOpen(false),
+                  afterOpenChange: (visible) =>
+                    !visible && setPreviewOpen(false),
                 }}
                 src={previewImage}
               />
@@ -435,6 +638,7 @@ function FilmForm({
           </Form.Item>
         </Col>
 
+        {/* ── Status + Trending ── */}
         <Col span={4}>
           <Form.Item
             name="status"
@@ -453,16 +657,19 @@ function FilmForm({
             label="Phim xu hướng"
             valuePropName="checked"
           >
-            <Switch
-              checkedChildren="Trending"
-              unCheckedChildren="Normal"
-            />
+            <Switch checkedChildren="Trending" unCheckedChildren="Normal" />
           </Form.Item>
         </Col>
 
+        {/* ── Buttons ── */}
         <Col span={24}>
           <Form.Item label={null}>
-            <Button className="mr-10" type="primary" htmlType="submit" loading={uploading}>
+            <Button
+              className="mr-10"
+              type="primary"
+              htmlType="submit"
+              loading={uploading || tmdbLoading}
+            >
               {submitButtonText}
             </Button>
             {onCancel && (

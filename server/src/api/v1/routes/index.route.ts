@@ -14,6 +14,7 @@ import commentRoutes from "./comment.route";
 import orderRoutes from "./order.route";
 import dashboardRoutes from "./dashboard.route"; 
 import chatbotRoutes from "./chatbot.route";
+import tmdbRoutes from "./tmdb.route";
 
 const mainV1Routes = (app: Express) => {
   const version = "/api/v1";
@@ -35,6 +36,7 @@ const mainV1Routes = (app: Express) => {
   app.use(version + "/upload", uploadRoutes);
   app.use(version + "/dashboard", dashboardRoutes); 
   app.use(version + "/chatbot", chatbotRoutes);
+  app.use(version + "/tmdb", tmdbRoutes);
 };
 
 export default mainV1Routes;
