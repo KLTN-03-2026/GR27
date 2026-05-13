@@ -56,7 +56,7 @@ const BookingModal = ({ showtime, open, onClose }) => {
     }
 
     let attempts = 0;
-    const maxAttempts = 10000; // Poll trong 20000 giây (10000 * 2s)
+    const maxAttempts = 200; // Poll trong 20000 giây (10000 * 2s)
 
     const pollInterval = setInterval(async () => {
       attempts++;
@@ -91,7 +91,7 @@ const BookingModal = ({ showtime, open, onClose }) => {
           messageApi.error("Không tìm thấy đơn hàng để kiểm tra.");
         }
       }
-    }, 2000); // Poll mỗi 2 giây
+    }, 3000); // Poll mỗi 3 giây
 
     // Cleanup khi component unmount hoặc state thay đổi
     return () => {
