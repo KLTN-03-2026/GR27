@@ -141,7 +141,7 @@ export const createOrder = async (userId: string, payload: ICreateOrderPayload) 
       }
     }
 
-    // 3. Validate combo foods
+    // 3. Validate combo foods 
     let comboSubtotal = 0;
     const validatedComboFoods: {
   comboFoodId: unknown;
