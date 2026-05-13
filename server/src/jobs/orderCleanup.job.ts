@@ -3,18 +3,19 @@ import Order, { OrderStatus, PaymentStatus } from "../api/v1/models/order.model"
 import ShowTime from "../api/v1/models/showTime.model";
 import { ShowTimeSeatStatus } from "../types/showTime.type";
 
-/**
- * Job tự động hủy các order quá hạn thanh toán (15 phút)
- * Chạy mỗi 5 phút
- */
-export const startOrderCleanupJob = () => {
-  cron.schedule("*/5 * * * *", async () => {
+interface CleanupJobOptions {
+  interval?: string; // cron expression
+}
+
+export const startOrderCleanupJob = (options: CleanupJobOptions = {}) => {
+  const { interval = "*/5 * * * *" } = options;
+
+  cron.schedule(interval, async () => {
     try {
       console.log("🔄 Running order cleanup job...");
 
       const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
-      // Tìm các order pending quá 15 phút
       const expiredOrders = await Order.find({
         orderStatus: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
@@ -26,21 +27,17 @@ export const startOrderCleanupJob = () => {
 
       for (const order of expiredOrders) {
         try {
-          // Update order status
           order.orderStatus = OrderStatus.EXPIRED;
           order.paymentStatus = PaymentStatus.FAILED;
           await order.save();
 
-          // Unlock seats
           const showtime = await ShowTime.findById(order.showtimeId);
           if (showtime) {
             const seatKeys = order.seats.map((s) => s.seatKey);
             let unlockedCount = 0;
 
             for (const seatKey of seatKeys) {
-              const seatIndex = showtime.seats.findIndex(
-                (s) => s.seatKey === seatKey
-              );
+              const seatIndex = showtime.seats.findIndex((s) => s.seatKey === seatKey);
               if (
                 seatIndex !== -1 &&
                 showtime.seats[seatIndex].status === ShowTimeSeatStatus.LOCKED
@@ -52,9 +49,7 @@ export const startOrderCleanupJob = () => {
 
             if (unlockedCount > 0) {
               await showtime.save();
-              console.log(
-                `✅ Unlocked ${unlockedCount} seats for order ${order.ticketCode}`
-              );
+              console.log(`✅ Unlocked ${unlockedCount} seats for order ${order.ticketCode}`);
             }
           }
 
@@ -70,5 +65,5 @@ export const startOrderCleanupJob = () => {
     }
   });
 
-  console.log("🚀 Order cleanup job started (runs every 5 minutes)");
+  console.log(`🚀 Order cleanup job started (${interval})`);
 };

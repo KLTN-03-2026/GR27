@@ -1,43 +1,54 @@
 import express, { Express } from "express";
 import dotenv from "dotenv";
-// Cấu hình .env
 dotenv.config();
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import * as database from "./config/database";
 import mainV1Routes from "./api/v1/routes/index.route";
-import { startOrderCleanupJob } from "./jobs/orderCleanup.job"; // ✅ THÊM MỚI
+import { startOrderCleanupJob } from "./jobs/orderCleanup.job";
 import { errorHandler } from "./middlewares/error.middleware";
+import { registerWebhook } from "./helpers/payos.helper";
 
-// Khởi động app và thiết lập port
 const app: Express = express();
 const port: number | string = process.env.PORT || 3000;
 const clientUrl: string = process.env.CLIENT_URL || "http://localhost:3000";
-// Kết nối Database
+const isProduction = process.env.NODE_ENV === "production";
+
 database.connect();
 
-// Middleware để đọc body từ client, không cần body-parser nâng cao
-app.use(express.json()); // Đọc JSON từ client (axios/fetch gửi lên)
-app.use(express.urlencoded({ extended: true })); // Nếu dùng form HTML gửi lên
-
-// Cho phép CORS
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: [clientUrl, "http://localhost:4000"], // ✅ Chỉ cho phép React app
-    credentials: true, //Cho phép gửi request với cookie, phải có
+    origin: [clientUrl, "http://localhost:4000"],
+    credentials: true,
   })
-); // cấu hình mặc định: cho phép tất cả origin
-
-// Dùng để check cookie đăng nhập
+);
 app.use(cookieParser());
 
-// Liên kết index API
 mainV1Routes(app);
 
-//  THÊM MỚI: Khởi động background jobs
-startOrderCleanupJob();
+// ── Background jobs & Webhook ─────────────────────────────────────────────
+if (isProduction) {
+  // Production: dùng webhook làm chính, cleanup job làm safety net
+  // Tự động đăng ký webhook với PayOS khi server khởi động
+  const webhookUrl = process.env.PAYOS_WEBHOOK_URL!;
+  if (webhookUrl) {
+    registerWebhook(webhookUrl)
+      .then(() => console.log("✅ PayOS webhook registered:", webhookUrl))
+      .catch((err) => console.error("❌ PayOS webhook registration failed:", err));
+  }
 
-//  Global Error Handler — Xử lý lỗi tập trung
+  // Vẫn giữ cleanup job nhưng chạy thưa hơn (mỗi 15 phút thay vì 5 phút)
+  // để xử lý các order bị bỏ quên
+  startOrderCleanupJob({ interval: "*/15 * * * *" });
+  console.log("🚀 Production mode: Webhook + Cleanup job (every 15 min)");
+} else {
+  // Development: chỉ dùng cleanup job + polling từ client
+  startOrderCleanupJob({ interval: "*/5 * * * *" });
+  console.log("🛠️  Development mode: Cleanup job only (every 5 min)");
+}
+
 app.use(errorHandler);
 
 app.listen(port, () => {
