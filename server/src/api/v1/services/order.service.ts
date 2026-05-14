@@ -235,7 +235,7 @@ export const handlePaymentWebhook = async (webhookBody: any) => {
     return { alreadyProcessed: true }; // hoặc return { isTest: true }
   }
 
-  const order = await Order.findOne({ transactionId: String(code) });
+  const order = await Order.findOne({ transactionId: String(orderCode) });
 
   if (!order) throw { status: 404, message: "Order not found" };
 
