@@ -15,6 +15,9 @@ import {
 } from "../../services/orderServices";
 import "./Booking.scss";
 
+const PAYMENT_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút, khớp với backend
+const POLL_INTERVAL_MS = 2000;             // Poll mỗi 2 giây
+
 const BookingModal = ({ showtime, open, onClose }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -25,13 +28,10 @@ const BookingModal = ({ showtime, open, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 
-  // Kiểm tra phiên đăng nhập
-
-  // Gộp các state liên quan đến order và payment vào một object
   const [orderInfo, setOrderInfo] = useState({
     orderId: null,
     paymentData: null,
-    pollingStatus: "idle", // idle, processing, success, error
+    pollingStatus: "idle", // idle | processing | success | error | expired
   });
 
   // Reset tất cả state khi modal được mở lại
@@ -48,25 +48,22 @@ const BookingModal = ({ showtime, open, onClose }) => {
     }
   }, [open]);
 
-  // Logic polling
+  // Logic polling — giới hạn đúng 15 phút (7500 lần × 2s)
   useEffect(() => {
-    // Chỉ chạy polling khi có đầy đủ thông tin và đang ở đúng trạng thái
     if (orderInfo.pollingStatus !== "processing" || !orderInfo.orderId) {
       return;
     }
 
     let attempts = 0;
-    const maxAttempts = 200; // Poll trong 20000 giây (10000 * 2s)
+    const maxAttempts = PAYMENT_TIMEOUT_MS / POLL_INTERVAL_MS; // = 450 lần
 
     const pollInterval = setInterval(async () => {
       attempts++;
 
       if (attempts > maxAttempts) {
+        // Hết 15 phút — backend đã expire, dừng poll
+        // Việc đóng modal được xử lý bởi handlePaymentTimeout
         clearInterval(pollInterval);
-        setOrderInfo((prev) => ({ ...prev, pollingStatus: "error" }));
-        messageApi.warning(
-          "Quá thời gian thanh toán. Vui lòng hủy và thử lại."
-        );
         return;
       }
 
@@ -75,11 +72,9 @@ const BookingModal = ({ showtime, open, onClose }) => {
         if (res.data.paymentStatus === "paid") {
           clearInterval(pollInterval);
           setOrderInfo((prev) => ({ ...prev, pollingStatus: "success" }));
-          messageApi.success(
-            "Thanh toán thành công! Đang chuyển đến trang vé..."
-          );
+          messageApi.success("Thanh toán thành công! Đang chuyển đến trang vé...");
           setTimeout(() => {
-            onClose(); // Đóng modal
+            onClose();
             navigate(`/ticket/${orderInfo.orderId}`);
           }, 2000);
         }
@@ -91,13 +86,19 @@ const BookingModal = ({ showtime, open, onClose }) => {
           messageApi.error("Không tìm thấy đơn hàng để kiểm tra.");
         }
       }
-    }, 3000); // Poll mỗi 3 giây
+    }, POLL_INTERVAL_MS);
 
-    // Cleanup khi component unmount hoặc state thay đổi
-    return () => {
-      clearInterval(pollInterval);
-    };
+    return () => clearInterval(pollInterval);
   }, [orderInfo, navigate, onClose, messageApi]);
+
+  // Callback khi countdown trong QRCodePayment về 0
+  const handlePaymentTimeout = () => {
+    setOrderInfo((prev) => ({ ...prev, pollingStatus: "expired" }));
+    // Tự động đóng modal sau 4 giây
+    setTimeout(() => {
+      onClose();
+    }, 4000);
+  };
 
   const seatSubtotal = useMemo(
     () => selectedSeats.reduce((total, seat) => total + seat.price, 0),
@@ -123,7 +124,7 @@ const BookingModal = ({ showtime, open, onClose }) => {
       );
       setTimeout(() => {
         onClose();
-      navigate("/auth/login");
+        navigate("/auth/login");
       }, 2000);
       return;
     }
@@ -147,13 +148,12 @@ const BookingModal = ({ showtime, open, onClose }) => {
       const response = await createOrder(payload);
 
       if (response.code === 201 && response.data.paymentData) {
-        // Cập nhật tất cả state liên quan trong một lần
         setOrderInfo({
           orderId: response.data.orderId,
           paymentData: response.data.paymentData,
-          pollingStatus: "processing", // Bắt đầu polling
+          pollingStatus: "processing",
         });
-        handleNext(); // Chuyển sang bước hiển thị QR
+        handleNext();
       } else {
         throw new Error("Không thể tạo thông tin thanh toán.");
       }
@@ -181,7 +181,6 @@ const BookingModal = ({ showtime, open, onClose }) => {
 
     try {
       await cancelOrder(orderInfo.orderId);
-
       messageApi.success({
         key,
         content: "Đã hủy giao dịch thành công!",
@@ -242,6 +241,7 @@ const BookingModal = ({ showtime, open, onClose }) => {
             <QRCodePayment
               paymentData={orderInfo.paymentData}
               onCancel={handleCancelOrder}
+              onTimeout={handlePaymentTimeout}
             />
           )}
           {orderInfo.pollingStatus === "success" && (
@@ -249,6 +249,13 @@ const BookingModal = ({ showtime, open, onClose }) => {
               status="success"
               title="Thanh toán thành công!"
               subTitle="Đang chuẩn bị vé của bạn..."
+            />
+          )}
+          {orderInfo.pollingStatus === "expired" && (
+            <Result
+              status="warning"
+              title="Giao dịch đã hết thời gian"
+              subTitle="Ghế đã được giải phóng. Cửa sổ này sẽ tự đóng sau vài giây..."
             />
           )}
           {orderInfo.pollingStatus === "error" && (

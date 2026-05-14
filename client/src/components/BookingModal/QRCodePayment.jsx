@@ -1,10 +1,12 @@
 // src/components/BookingModal/QRCodePayment.jsx
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Row, Col, Typography, Button, message, Space, Alert } from "antd";
-import { CopyOutlined, BulbOutlined } from "@ant-design/icons";
-import { QRCodeSVG } from "qrcode.react"; // 1. Import component QRCode từ thư viện
+import { CopyOutlined, BulbOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import { QRCodeSVG } from "qrcode.react";
 
 const { Text, Paragraph } = Typography;
+
+const PAYMENT_TIMEOUT_SECONDS = 15 * 60; // 15 phút
 
 const bankLogos = {
   970422: {
@@ -14,7 +16,31 @@ const bankLogos = {
   // Thêm các ngân hàng khác nếu cần
 };
 
-const QRCodePayment = ({ paymentData, onCancel }) => {
+const QRCodePayment = ({ paymentData, onCancel, onTimeout }) => {
+  const [secondsLeft, setSecondsLeft] = useState(PAYMENT_TIMEOUT_SECONDS);
+  const onTimeoutRef = useRef(onTimeout);
+
+  // Giữ ref luôn trỏ đến version mới nhất của onTimeout
+  // mà không cần thêm vào dependency array của useEffect bên dưới
+  useEffect(() => {
+    onTimeoutRef.current = onTimeout;
+  }, [onTimeout]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onTimeoutRef.current?.();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []); // chỉ chạy 1 lần khi mount — đúng theo thiết kế
+
   if (!paymentData) {
     return <Alert message="Không có thông tin thanh toán" type="error" />;
   }
@@ -26,6 +52,11 @@ const QRCodePayment = ({ paymentData, onCancel }) => {
 
   const bankInfo = bankLogos[paymentData.bin];
 
+  const minutes = Math.floor(secondsLeft / 60);
+  const seconds = secondsLeft % 60;
+  const countdownText = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  const isUrgent = secondsLeft <= 60;
+
   return (
     <div className="qr-payment-container">
       <Alert
@@ -33,11 +64,35 @@ const QRCodePayment = ({ paymentData, onCancel }) => {
         type="info"
         showIcon
         icon={<BulbOutlined />}
-        style={{ marginBottom: 24 }}
+        style={{ marginBottom: 16 }}
       />
+
+      {/* Countdown bar */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          marginBottom: 20,
+          padding: "8px 16px",
+          borderRadius: 8,
+          backgroundColor: isUrgent ? "#fff1f0" : "#f6ffed",
+          border: `1px solid ${isUrgent ? "#ffa39e" : "#b7eb8f"}`,
+          transition: "background-color 0.3s, border-color 0.3s",
+        }}
+      >
+        <ClockCircleOutlined style={{ color: isUrgent ? "#ff4d4f" : "#52c41a", fontSize: 16 }} />
+        <Text style={{ color: isUrgent ? "#ff4d4f" : "#52c41a", fontWeight: 600, fontSize: 15 }}>
+          {isUrgent ? "Sắp hết thời gian! " : "Thời gian còn lại: "}
+          <span style={{ fontVariantNumeric: "tabular-nums", fontSize: 18 }}>
+            {countdownText}
+          </span>
+        </Text>
+      </div>
+
       <Row gutter={[32, 16]}>
         <Col xs={24} md={10} style={{ textAlign: "center" }}>
-          {/* 2. Thay thế thẻ <img> bằng component <QRCode> */}
           <div
             style={{
               padding: 16,
@@ -85,9 +140,7 @@ const QRCodePayment = ({ paymentData, onCancel }) => {
             <div className="info-item">
               <Text type="secondary">Số tài khoản</Text>
               <Space>
-                <Text strong >
-                  {paymentData.accountNumber}
-                </Text>
+                <Text strong>{paymentData.accountNumber}</Text>
                 <Button
                   icon={<CopyOutlined />}
                   size="small"
@@ -115,9 +168,7 @@ const QRCodePayment = ({ paymentData, onCancel }) => {
             <div className="info-item">
               <Text type="secondary">Nội dung</Text>
               <Space>
-                <Text strong>
-                  {paymentData.description}
-                </Text>
+                <Text strong>{paymentData.description}</Text>
                 <Button
                   icon={<CopyOutlined />}
                   size="small"
