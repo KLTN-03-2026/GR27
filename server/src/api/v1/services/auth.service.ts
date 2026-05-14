@@ -127,7 +127,9 @@ export const loginUser = async (identifier: string, password: string) => {
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw { status: 400, message: "Mật khẩu không đúng!" };
 
-  return createAndSaveTokens(user);
+  const tokens = await createAndSaveTokens(user);
+
+  return { ...tokens, role: user.role };
 };
 
 export const logoutUser = async (refreshToken: string) => {

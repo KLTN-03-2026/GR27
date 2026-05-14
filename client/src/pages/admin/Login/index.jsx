@@ -1,10 +1,10 @@
 // src/pages/admin/Login/index.jsx
 import React, { useState } from "react";
-import { Form, Input, Button, Typography, message } from "antd";
+import { Form, Input, Button, Typography, message, Modal  } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { login } from "../../../services/authServices";
+import { login,logout } from "../../../services/authServices";
 import { fetchUser } from "../../../redux/actions/auth.action";
 import "./Login.scss";
 
@@ -20,10 +20,22 @@ const LoginAdmin = () => {
     try {
       setLoading(true);
       // Gọi API login
-      await login({
+      const res = await login({
         identifier: values.identifier,
         password: values.password,
       });
+
+      if (res?.role === "user") {
+        await logout();
+        Modal.warning({
+          title: "Trang đăng nhập không hợp lệ!",
+          content: "Tài khoản này là tài khoản người dùng thông thường. Vui lòng đăng nhập tại trang người dùng.",
+          okText: "Đến trang Đăng nhập",
+          centered: true,
+          onOk: () => navigate("/auth/login"),
+        });
+        return;
+      }
 
       messageApi.open({
         type: "success",

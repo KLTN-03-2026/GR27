@@ -38,9 +38,9 @@ export const resendOtp = async (req: Request, res: Response): Promise<void> => {
 // [POST] /api/v1/auth/login
 export const login = async (req: Request, res: Response): Promise<void> => {
   const { identifier, password } = req.body;
-  const { accessToken, refreshToken } = await authService.loginUser(identifier, password);
+  const { accessToken, refreshToken, role } = await authService.loginUser(identifier, password);
   setAuthCookies(res, accessToken, refreshToken);
-  res.json({ code: 200, message: "Đăng nhập thành công" });
+  res.json({ code: 200, message: "Đăng nhập thành công", role }); 
 };
 
 // [POST] /api/v1/auth/logout
