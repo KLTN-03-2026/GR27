@@ -1,6 +1,9 @@
 import React from 'react';
 import { Card, Table } from 'antd';
 
+// Chiều cao khớp FormatChart: chart 280px + padding → Card body scroll ~280px
+const TABLE_MAX_HEIGHT = 280;
+
 export const CinemaRevenueTable = ({ data, loading }) => {
   const columns = [
     {
@@ -46,7 +49,11 @@ export const CinemaRevenueTable = ({ data, loading }) => {
   ];
 
   return (
-    <Card title="Doanh thu theo rạp" loading={loading}>
+    <Card
+      title="Doanh thu theo rạp"
+      loading={loading}
+      styles={{ body: { padding: 0 } }}
+    >
       <Table
         columns={columns}
         dataSource={data}
@@ -54,6 +61,7 @@ export const CinemaRevenueTable = ({ data, loading }) => {
         pagination={false}
         size="middle"
         locale={{ emptyText: 'Không có dữ liệu' }}
+        scroll={{ y: TABLE_MAX_HEIGHT }}
       />
     </Card>
   );

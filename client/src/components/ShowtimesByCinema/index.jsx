@@ -16,7 +16,7 @@ import dayjs from "dayjs";
 import { getAllCity } from "../../services/cityServices";
 import { getAllCinema } from "../../services/cinemaServices";
 import Loading from "../../components/Loading";
-import { useBooking } from '../../context/BookingContext';
+import { useBooking } from "../../context/BookingContext";
 const { Title, Text } = Typography;
 
 const ShowtimesByCinema = () => {
@@ -29,7 +29,7 @@ const ShowtimesByCinema = () => {
   const [selectedCityId, setSelectedCityId] = useState(null);
   const [selectedCinemaId, setSelectedCinemaId] = useState(null);
   const [selectedDate, setSelectedDate] = useState(
-    dayjs().format("YYYY-MM-DD")
+    dayjs().format("YYYY-MM-DD"),
   );
 
   const [loading, setLoading] = useState(true);
@@ -51,24 +51,34 @@ const ShowtimesByCinema = () => {
 
         const cinemaCityIds = new Set(
           activeCinemas.flatMap((c) =>
-            c.cityIds.map((city) => (typeof city === "object" ? city._id : city))
-          )
+            c.cityIds.map((city) =>
+              typeof city === "object" ? city._id : city,
+            ),
+          ),
         );
+        // SAU:
         const sortedCities = (cityResult || []).sort((a, b) => {
-          const aHasCinema = cinemaCityIds.has(a._id);
-          const bHasCinema = cinemaCityIds.has(b._id);
-          return bHasCinema - aHasCinema;
+          const aCount = activeCinemas.filter((c) =>
+            c.cityIds.some(
+              (city) => (typeof city === "object" ? city._id : city) === a._id,
+            ),
+          ).length;
+          const bCount = activeCinemas.filter((c) =>
+            c.cityIds.some(
+              (city) => (typeof city === "object" ? city._id : city) === b._id,
+            ),
+          ).length;
+          return bCount - aCount; // Nhiều rạp nhất lên trên
         });
         setCities(sortedCities);
 
         if (sortedCities.length > 0) {
           const firstCityWithCinema = sortedCities.find((c) =>
-            cinemaCityIds.has(c._id)
+            cinemaCityIds.has(c._id),
           );
-          setSelectedCityId(
-            firstCityWithCinema?._id || sortedCities[0]._id
-          );
+          setSelectedCityId(firstCityWithCinema?._id || sortedCities[0]._id);
         }
+        console.log("Cinema sample:", activeCinemas[0]);
       } catch (err) {
         messageApi.error("Không thể tải dữ liệu rạp và thành phố");
       } finally {
@@ -83,7 +93,7 @@ const ShowtimesByCinema = () => {
     try {
       setShowtimeLoading(true);
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/show-times/cinema/${selectedCinemaId}?date=${selectedDate}`
+        `${process.env.REACT_APP_API_BASE_URL}/show-times/cinema/${selectedCinemaId}?date=${selectedDate}`,
       );
       const result = await response.json();
       if (result.code === 200) {
@@ -107,40 +117,57 @@ const ShowtimesByCinema = () => {
 
   const groupedAndFilteredCinemas = useMemo(() => {
     if (!selectedCityId || cinemas.length === 0) return {};
-  
-    const filteredByCity = cinemas.filter(c => 
-      c.cityIds.some(city => (typeof city === 'object' ? city._id : city) === selectedCityId)
+
+    const filteredByCity = cinemas.filter((c) =>
+      c.cityIds.some(
+        (city) =>
+          (typeof city === "object" ? city._id : city) === selectedCityId,
+      ),
     );
-  
+
     const grouped = filteredByCity.reduce((acc, cinema) => {
       const brand = cinema.parentId
-        ? cinemas.find(c => c._id === (typeof cinema.parentId === 'object' ? cinema.parentId._id : cinema.parentId))
+        ? cinemas.find(
+            (c) =>
+              c._id ===
+              (typeof cinema.parentId === "object"
+                ? cinema.parentId._id
+                : cinema.parentId),
+          )
         : cinema;
-  
+
       if (!brand) return acc;
-  
+
       if (!acc[brand._id]) {
         acc[brand._id] = {
           brandInfo: brand,
           children: [],
         };
       }
-      
-      if(cinema._id !== brand._id) {
+
+      if (cinema._id !== brand._id) {
         acc[brand._id].children.push(cinema);
       }
-  
+
       return acc;
     }, {});
 
-    Object.values(grouped).forEach(group => {
-        if(group.children.length === 0 && filteredByCity.some(c => c._id === group.brandInfo._id)) {
-            group.children.push(group.brandInfo);
-        }
+    Object.values(grouped).forEach((group) => {
+      if (
+        group.children.length === 0 &&
+        filteredByCity.some((c) => c._id === group.brandInfo._id)
+      ) {
+        group.children.push(group.brandInfo);
+      }
+      // Sort children theo số phòng giảm dần
+      group.children.sort((a, b) => {
+        const aRooms = Array.isArray(a.rooms) ? a.rooms.length : 0;
+        const bRooms = Array.isArray(b.rooms) ? b.rooms.length : 0;
+        return bRooms - aRooms;
+      });
     });
-    
-    return grouped;
 
+    return grouped;
   }, [selectedCityId, cinemas]);
 
   useEffect(() => {
@@ -163,8 +190,8 @@ const ShowtimesByCinema = () => {
     cities.forEach((city) => {
       counts[city._id] = cinemas.filter((cinema) =>
         cinema.cityIds.some(
-          (c) => (typeof c === "object" ? c._id : c) === city._id
-        )
+          (c) => (typeof c === "object" ? c._id : c) === city._id,
+        ),
       ).length;
     });
     return counts;
@@ -181,11 +208,13 @@ const ShowtimesByCinema = () => {
           Mua vé theo rạp
         </Title>
         <Row gutter={[24, 24]} align="top">
-            {/* ... Cột Khu vực và Chọn rạp không đổi ... */}
-            <Col xs={24} md={5}>
+          {/* ... Cột Khu vực và Chọn rạp không đổi ... */}
+          <Col xs={24} md={5}>
             <div className="selection-panel city-panel">
               <div className="panel-title">Khu vực</div>
-              {loading ? ( <Loading /> ) : (
+              {loading ? (
+                <Loading />
+              ) : (
                 cities.map((city) => (
                   <Button
                     key={city._id}
@@ -198,7 +227,9 @@ const ShowtimesByCinema = () => {
                     <Badge
                       count={cityCinemaCount[city._id] || 0}
                       color={selectedCityId === city._id ? "#fff" : "#1890ff"}
-                      style={ selectedCityId === city._id ? { color: "#1890ff" } : {} }
+                      style={
+                        selectedCityId === city._id ? { color: "#1890ff" } : {}
+                      }
                     />
                   </Button>
                 ))
@@ -209,31 +240,61 @@ const ShowtimesByCinema = () => {
           <Col xs={24} md={7}>
             <div className="selection-panel cinema-panel">
               <div className="panel-title">Chọn rạp</div>
-              {loading ? ( <Loading /> ) : Object.keys(groupedAndFilteredCinemas).length > 0 ? (
-                Object.values(groupedAndFilteredCinemas).map(
-                  ({ brandInfo, children }) => (
-                    children.length > 0 && 
-                    <div key={brandInfo._id} className="cinema-brand-group">
-                      <div className="cinema-brand-header">
-                        <Avatar src={brandInfo.avatar} size="small" />
-                        <Text strong>{brandInfo.name}</Text>
-                      </div>
-                      {children.map((cinema) => (
-                        <Button
-                          key={cinema._id}
-                          block
-                          type={ selectedCinemaId === cinema._id ? "primary" : "text" }
-                          onClick={() => setSelectedCinemaId(cinema._id)}
-                          className="panel-item cinema-item"
-                        >
-                          {cinema.name}
-                        </Button>
-                      ))}
-                    </div>
+              {loading ? (
+                <Loading />
+              ) : Object.keys(groupedAndFilteredCinemas).length > 0 ? (
+                Object.values(groupedAndFilteredCinemas)
+                  .sort((a, b) => {
+                    const aRooms = a.children.reduce(
+                      (sum, c) =>
+                        sum + (Array.isArray(c.rooms) ? c.rooms.length : 0),
+                      0,
+                    );
+                    const bRooms = b.children.reduce(
+                      (sum, c) =>
+                        sum +
+                        (Array.isArray(c.rooms)
+                          ? (b.children.find((x) => x._id === c._id)?.rooms
+                              ?.length ??
+                            c.rooms?.length ??
+                            0)
+                          : 0),
+                      0,
+                    );
+                    return bRooms - aRooms;
+                  })
+
+                  .map(
+                    ({ brandInfo, children }) =>
+                      children.length > 0 && (
+                        <div key={brandInfo._id} className="cinema-brand-group">
+                          <div className="cinema-brand-header">
+                            <Avatar src={brandInfo.avatar} size="small" />
+                            <Text strong>{brandInfo.name}</Text>
+                          </div>
+                          {children.map((cinema) => (
+                            <Button
+                              key={cinema._id}
+                              block
+                              type={
+                                selectedCinemaId === cinema._id
+                                  ? "primary"
+                                  : "text"
+                              }
+                              onClick={() => setSelectedCinemaId(cinema._id)}
+                              className="panel-item cinema-item"
+                            >
+                              {cinema.name}
+                            </Button>
+                          ))}
+                        </div>
+                      ),
                   )
-                )
               ) : (
-                <Empty description="Không có rạp nào" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                <Empty
+                  description="Không có rạp nào"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
               )}
             </div>
           </Col>
@@ -244,15 +305,17 @@ const ShowtimesByCinema = () => {
                 {dates.map((date) => (
                   <Button
                     key={date.format("YYYY-MM-DD")}
-                    type={ selectedDate === date.format("YYYY-MM-DD") ? "primary" : "default" }
+                    type={
+                      selectedDate === date.format("YYYY-MM-DD")
+                        ? "primary"
+                        : "default"
+                    }
                     onClick={() => setSelectedDate(date.format("YYYY-MM-DD"))}
                     className="date-button"
                   >
                     <div className="date-btn-content">
                       <Text strong>{date.format("DD/MM")}</Text>
-                      <Text type="secondary" >
-                        {date.format("ddd")}
-                      </Text>
+                      <Text type="secondary">{date.format("ddd")}</Text>
                     </div>
                   </Button>
                 ))}
@@ -262,20 +325,22 @@ const ShowtimesByCinema = () => {
                 message="Nhấn vào suất chiếu để tiến hành mua vé"
                 type="warning"
                 showIcon
-                style={{ margin: '16px 16px 0 16px' }}
+                style={{ margin: "16px 16px 0 16px" }}
               />
 
               {selectedCinema && (
                 <div className="selected-cinema-info">
                   <Link to={`/cinema/${selectedCinema.slug}`}>
-                  <Title level={4}  className="cinema-name-title">{selectedCinema.name}</Title>
+                    <Title level={4} className="cinema-name-title">
+                      {selectedCinema.name}
+                    </Title>
                   </Link>
-                  
+
                   <Text type="secondary">
                     {selectedCinema.address} -{" "}
                     <Link
                       to={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                        selectedCinema.address
+                        selectedCinema.address,
                       )}`}
                       target="_blank"
                     >
@@ -286,7 +351,9 @@ const ShowtimesByCinema = () => {
               )}
 
               <div className="showtime-list">
-                {showtimeLoading ? ( <Loading /> ) : showtimes.length > 0 ? (
+                {showtimeLoading ? (
+                  <Loading />
+                ) : showtimes.length > 0 ? (
                   showtimes.map((film) => (
                     <div key={film._id} className="film-showtime-item">
                       <Row gutter={16} align="top">
@@ -300,7 +367,10 @@ const ShowtimesByCinema = () => {
                           </Link>
                         </Col>
                         <Col xs={24} sm={18}>
-                          <Title level={5} style={{ marginTop: 0, marginBottom: 5 }} >
+                          <Title
+                            level={5}
+                            style={{ marginTop: 0, marginBottom: 5 }}
+                          >
                             <Link to={`/films/${film.slug}`}>{film.title}</Link>
                           </Title>
                           <Text type="secondary">
@@ -316,7 +386,7 @@ const ShowtimesByCinema = () => {
                                   key={st._id}
                                   className="time-btn"
                                   disabled={isPast}
-                                  onClick={() => openBookingModal(st)} 
+                                  onClick={() => openBookingModal(st)}
                                 >
                                   {dayjs(st.startTime).format("HH:mm")}
                                 </Button>
@@ -324,7 +394,10 @@ const ShowtimesByCinema = () => {
 
                               if (isPast) {
                                 return (
-                                  <Tooltip title="Suất chiếu này đã qua" key={st._id}>
+                                  <Tooltip
+                                    title="Suất chiếu này đã qua"
+                                    key={st._id}
+                                  >
                                     {button}
                                   </Tooltip>
                                 );
@@ -337,7 +410,10 @@ const ShowtimesByCinema = () => {
                     </div>
                   ))
                 ) : (
-                  <Empty description="Không có suất chiếu phù hợp" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  <Empty
+                    description="Không có suất chiếu phù hợp"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
                 )}
               </div>
             </div>

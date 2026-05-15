@@ -13,20 +13,11 @@ export const RevenueChart = ({ data, loading }) => {
     );
   }
 
-  // Format date based on period
   const formatDate = (dateObj) => {
     if (!dateObj) return 'N/A';
-    
-    if (dateObj.day) {
-      // Daily format: DD/MM
-      return `${dateObj.day}/${dateObj.month}`;
-    } else if (dateObj.week) {
-      // Weekly format: Tuần W/YYYY (vì API không trả month khi filter theo week)
-      return `T${dateObj.week}/${dateObj.year}`;
-    } else if (dateObj.month) {
-      // Monthly format: Tháng M/YYYY
-      return `T${dateObj.month}/${dateObj.year}`;
-    }
+    if (dateObj.day) return `${dateObj.day}/${dateObj.month}`;
+    if (dateObj.week) return `T${dateObj.week}/${dateObj.year}`;
+    if (dateObj.month) return `T${dateObj.month}/${dateObj.year}`;
     return 'N/A';
   };
 
@@ -47,17 +38,23 @@ export const RevenueChart = ({ data, loading }) => {
     data: chartData,
     xField: 'date',
     yField: 'value',
-    seriesField: 'type',
-    isStack: true,
-    color: ['#1890ff', '#52c41a'],
-    legend: { 
-      position: 'top' 
+    colorField: 'type',
+    // Dùng group thay vì stack để giữ màu riêng biệt rõ ràng
+    group: true,
+    // Màu: vé = xanh dương, combo = xanh lá (khớp với RevenueComparisonCard)
+    scale: {
+      color: {
+        range: ['#1890ff', '#52c41a'],
+      },
+    },
+    legend: {
+      position: 'top',
     },
     axis: {
       y: {
         labelFormatter: (v) => {
           const val = parseFloat(v);
-          return `${(val / 1000000).toFixed(1)}M`;
+          return `${(val / 1_000_000).toFixed(1)}M`;
         },
       },
     },
@@ -65,12 +62,11 @@ export const RevenueChart = ({ data, loading }) => {
       items: [
         {
           channel: 'y',
-          valueFormatter: (v) => {
-            return new Intl.NumberFormat('vi-VN', {
+          valueFormatter: (v) =>
+            new Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
-            }).format(v);
-          },
+            }).format(v),
         },
       ],
     },
