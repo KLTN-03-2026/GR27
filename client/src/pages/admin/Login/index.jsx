@@ -151,7 +151,7 @@ const LoginAdmin = () => {
 
           <div className="login-admin__footer">
             <Text type="secondary">
-              © 2024 Movie Admin System. All rights reserved.
+              © 2026 Movie Admin System. All rights reserved.
             </Text>
           </div>
         </div>

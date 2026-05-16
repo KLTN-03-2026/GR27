@@ -2,10 +2,10 @@
 import { useMemo } from 'react';
 
 export const SEAT_WIDTH    = 1.05;  // khoảng cách ngang ghế thường/VIP
-export const COUPLE_WIDTH  = 1.0;   // khoảng cách ngang ghế đôi (tính theo cặp, không phải đơn)
-export const ROW_DEPTH     = 1.6;   // khoảng cách hàng
-export const ROW_ELEVATION = 0.28;  // độ dốc mỗi hàng
-export const SEAT_HEIGHT   = 0.1;
+export const COUPLE_WIDTH  = 1.0;   // khoảng cách ngang ghế đôi (tính theo cặp)
+export const ROW_DEPTH     = 1.6;   // khoảng cách hàng (giữ nguyên ban đầu)
+export const ROW_ELEVATION = 0.45;  // độ cao bậc mỗi hàng (tăng từ 0.28 → 0.45)
+export const SEAT_HEIGHT   = 0.3;
 
 const useSeats3D = (seats = []) => {
   return useMemo(() => {
@@ -43,7 +43,6 @@ const useSeats3D = (seats = []) => {
       seen.add(seat.seatKey);
       seen.add(partner.seatKey);
 
-      // Ghế number lớn hơn = partner, bị skip
       if (seat.number < partner.number) {
         partnerKeys.add(partner.seatKey);
       } else {

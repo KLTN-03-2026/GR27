@@ -1,7 +1,7 @@
 // src/components/CinemaRoom3D/index.jsx
 import React, { useState, useCallback, Suspense, useEffect, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls  } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { Button, Alert, message } from 'antd';
 import {
   EyeOutlined, LeftOutlined, RightOutlined,
@@ -14,7 +14,6 @@ import Tooltip3D from './Tooltip3D';
 import FirstPersonView from './FirstPersonView';
 import useSeats3D from './useSeats3D';
 import './CinemaRoom3D.scss';
-
 
 
 // ==========================================
@@ -58,6 +57,7 @@ const CinemaScene = ({
   showtime, processedSeats, partnerKeys, roomDimensions,
   selectedSeats, onSeatClick, onSeatHover, hoveredSeat,
   isFirstPerson, viewingSeat, keysRef,
+  seatsData, // { totalRows, rowDepth, rowElevation, seatsStartZ }
 }) => {
   const screenZ = -(roomDimensions.depth / 2) + 0.1;
 
@@ -67,6 +67,10 @@ const CinemaScene = ({
         width={roomDimensions.width}
         depth={roomDimensions.depth}
         height={roomDimensions.height}
+        totalRows={seatsData?.totalRows ?? 0}
+        rowDepth={seatsData?.rowDepth ?? 1.6}
+        rowElevation={seatsData?.rowElevation ?? 0.45}
+        seatsStartZ={seatsData?.seatsStartZ ?? 0}
       />
       <SeatsLayer
         processedSeats={processedSeats}
@@ -91,7 +95,7 @@ const CinemaScene = ({
           enablePan={true}
           enableZoom={true}
           minDistance={3}
-          maxDistance={roomDimensions.depth * 1.5}
+          maxDistance={roomDimensions.depth * 0.75}
           maxPolarAngle={Math.PI / 2.1}
           target={[0, 1, 0]}
           regress
@@ -111,14 +115,28 @@ const CinemaRoom3D = ({ showtime, selectedSeats = [], onSelect }) => {
   const [webGLError, setWebGLError]       = useState(false);
   const [isFullscreen, setIsFullscreen]   = useState(false);
 
-  // Ref theo dõi phím đang nhấn (không trigger re-render)
   const keysRef = useRef({});
 
-  const { processedSeats, partnerKeys, roomDimensions } = useSeats3D(showtime?.seats);
+  const { processedSeats, partnerKeys, roomDimensions, allRows } = useSeats3D(showtime?.seats);
+
+  // Tính seatsStartZ: z của hàng đầu tiên (rowIndex=0) — dùng để vẽ bậc thang đúng vị trí
+  const seatsStartZ = React.useMemo(() => {
+    if (!processedSeats.length) return 0;
+    const firstRowSeat = processedSeats.find(s => s.rowIndex === 0);
+    return firstRowSeat?.position?.[2] ?? 0;
+  }, [processedSeats]);
+
+  const seatsData = {
+    totalRows:    allRows?.length ?? 0,
+    rowDepth:     1.6,
+    rowElevation: 0.45,
+    seatsStartZ,
+  };
 
   const availableViewSeats = selectedSeats.filter(
     s => s.status !== 'booked' && s.status !== 'locked'
   );
+
   const viewingSeat = isFirstPerson
     ? processedSeats.find(s => s.seatKey === availableViewSeats[viewingIndex]?.seatKey)
     : null;
@@ -200,6 +218,14 @@ const CinemaRoom3D = ({ showtime, selectedSeats = [], onSelect }) => {
     </button>
   );
 
+  const initCameraZ = roomDimensions.depth * 0.38;
+  const initCameraY = 6;
+
+  // ✅ Khi fullscreen: giảm DPR + demand frameloop để đỡ lag do pixel nhiều hơn
+  // Khi modal thường: giữ nguyên cấu hình cũ (mượt sẵn rồi)
+  const canvasDpr       = isFullscreen ? [1, 1]   : [1, 1.5];
+  const canvasFrameloop = isFullscreen && !isFirstPerson ? 'demand' : 'always';
+
   return (
     <div className={`cinema3d-wrapper ${isFullscreen ? 'cinema3d-wrapper--fullscreen' : ''}`}>
 
@@ -248,11 +274,22 @@ const CinemaRoom3D = ({ showtime, selectedSeats = [], onSelect }) => {
       {/* === CANVAS === */}
       <div className="cinema3d-canvas-wrapper">
         <Canvas
-          camera={{ position: [0, 8, 15], fov: 60 }}
+          key={`${roomDimensions.depth}`}
+          camera={{
+            position: [0, initCameraY, initCameraZ],
+            fov: 60,
+            near: 0.1,
+            far: 1000,
+          }}
           shadows={false}
-          gl={{ antialias: true, powerPreference: 'high-performance' }}
-          dpr={[1, 1.5]}
-          frameloop="always"
+          gl={{
+            antialias: true,
+            powerPreference: 'high-performance',
+            stencil: false,
+            alpha: false,
+          }}
+          dpr={canvasDpr}
+          frameloop={canvasFrameloop}
           style={{ background: '#0a0a14' }}
           performance={{ min: 0.5 }}
         >
@@ -269,6 +306,7 @@ const CinemaRoom3D = ({ showtime, selectedSeats = [], onSelect }) => {
               isFirstPerson={isFirstPerson}
               viewingSeat={viewingSeat}
               keysRef={keysRef}
+              seatsData={seatsData}
             />
           </Suspense>
         </Canvas>

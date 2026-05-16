@@ -107,6 +107,23 @@
   }
 }
 
+.cinema3d-wrapper--fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  border-radius: 0;
+  
+  
+  display: flex;
+  flex-direction: column;
+
+  .cinema3d-canvas-wrapper {
+    flex: 1;          // canvas chiếm phần còn lại
+    height: 0;        // quan trọng: override height: 480px cố định
+    min-height: 0;    // cho phép co lại
+  }
+}
+
 // ==========================================
 // D-Pad (nút mũi tên di chuyển)
 // ==========================================
