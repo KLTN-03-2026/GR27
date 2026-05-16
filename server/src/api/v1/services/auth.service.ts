@@ -43,7 +43,7 @@ const sendOtp = async (email: string, type: string) => {
   const otpRandom = generateHelper.generateRandomNumber();
   await Otp.findOneAndDelete({ email, type });
   await new Otp({ email, otp: otpRandom, type, expiresAt: Date.now() }).save();
-  sendMailHelper.sendMail(email, "Movix - Mã OTP xác minh tài khoản", otpRandom);
+  await sendMailHelper.sendMail(email, "Movix - Mã OTP xác minh tài khoản", otpRandom); 
 };
 
 // ── Service functions ───────────────────────────────────────────────────────

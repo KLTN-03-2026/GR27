@@ -26,6 +26,5 @@ export const getFilmDetail = async (req: Request, res: Response): Promise<void> 
   }
 
   const mapped = await tmdbService.getAndMapFilmDetail(tmdbId, language as string);
-  console.log('mapped', mapped);
   res.status(200).json({ code: 200, message: "Thành công", data: mapped });
 };

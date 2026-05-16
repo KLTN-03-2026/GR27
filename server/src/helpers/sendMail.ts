@@ -3,22 +3,21 @@ import nodemailer from "nodemailer";
 export const sendMail = async (
   email: string,
   subject: string,
-  otpCode: string
+  otpCode: string,
 ): Promise<void> => {
-  try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: subject,
-      html: `
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: subject,
+    html: `
 <div style="max-width: 600px; margin: auto; border: 1px solid #eee; padding: 30px; font-family: Arial, sans-serif; background-color: #fff; color: #000;">
   <!-- Header -->
   <div style="text-align: center; padding-bottom: 20px;">
@@ -56,17 +55,14 @@ export const sendMail = async (
   <!-- Footer -->
   <div style="text-align: center; font-size: 12px; color: #999; margin-top: 30px;">
     © ${new Date().getFullYear()} Movix. All rights reserved.
-    <span style="display:none">${Math.random().toString(36).substring(2,8)}</span>
+    <span style="display:none">${Math.random().toString(36).substring(2, 8)}</span>
   </div>
 </div>
 
 
 `,
-    };
+  };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent: " + info.response);
-  } catch (error) {
-    console.error("Error sending email:", error);
-  }
+  const info = await transporter.sendMail(mailOptions);
+  console.log("Email sent: " + info.response);
 };

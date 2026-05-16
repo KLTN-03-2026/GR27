@@ -217,6 +217,8 @@ const RoomGeometry = ({
         <meshStandardMaterial
           color="#1c1c28"
           roughness={1}
+           transparent
+          opacity={0.55}
           side={THREE.DoubleSide}
         />
       </mesh>

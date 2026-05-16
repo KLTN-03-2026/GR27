@@ -31,11 +31,10 @@ const getModel = (modelName: string) =>
   genAI.getGenerativeModel({
     model: modelName,
     systemInstruction: buildSystemPrompt(
-      process.env.CLIENT_URL || "http://localhost:3000"
+      process.env.CLIENT_URL || "http://localhost:3000",
     ),
     tools: [{ functionDeclarations: CHATBOT_TOOLS }],
   });
-
 
 // ── System prompt (nhận clientUrl động từ .env) ───────────────────────────────
 
@@ -99,7 +98,7 @@ const GENRE_MAP: Record<string, string> = {
   "hành động": "action",
   "phiêu lưu": "adventure",
   "hoạt hình": "animation",
-  "hài": "comedy",
+  hài: "comedy",
   "hài hước": "comedy",
   "tội phạm": "crime",
   "tâm lý": "drama",
@@ -161,7 +160,8 @@ const CHATBOT_TOOLS: FunctionDeclaration[] = [
         },
         language: {
           type: SchemaType.STRING,
-          description: "Ngôn ngữ phim: Tiếng Việt, Tiếng Anh, Tiếng Hàn, Tiếng Nhật...",
+          description:
+            "Ngôn ngữ phim: Tiếng Việt, Tiếng Anh, Tiếng Hàn, Tiếng Nhật...",
         },
       },
     },
@@ -189,7 +189,8 @@ const CHATBOT_TOOLS: FunctionDeclaration[] = [
       properties: {
         city: {
           type: SchemaType.STRING,
-          description: "Tên thành phố: Hà Nội, Hồ Chí Minh, Đà Nẵng, Cần Thơ...",
+          description:
+            "Tên thành phố: Hà Nội, Hồ Chí Minh, Đà Nẵng, Cần Thơ...",
         },
         brand: {
           type: SchemaType.STRING,
@@ -224,7 +225,9 @@ const CHATBOT_TOOLS: FunctionDeclaration[] = [
         date: {
           type: SchemaType.STRING,
           description:
-            "Ngày chiếu: today (hôm nay), tomorrow (ngày mai), hoặc định dạng YYYY-MM-DD. Chỉ truyền khi user chỉ định ngày cụ thể, KHÔNG truyền nếu user hỏi chung chung.",
+            "Ngày chiếu. Chấp nhận các định dạng: today (hôm nay), tomorrow (ngày mai), DD/MM, DD/MM/YYYY, hoặc YYYY-MM-DD. " +
+            "Ví dụ: '19/05', '19/05/2026', '2026-05-19'. " +
+            "Chỉ truyền khi user chỉ định ngày cụ thể, KHÔNG truyền nếu user hỏi chung chung.",
         },
         format: {
           type: SchemaType.STRING,
@@ -246,7 +249,8 @@ const CHATBOT_TOOLS: FunctionDeclaration[] = [
         },
         date: {
           type: SchemaType.STRING,
-          description: "Ngày xem lịch: today, tomorrow, hoặc YYYY-MM-DD. Mặc định là hôm nay",
+          description:
+            "Ngày xem lịch. Chấp nhận: today, tomorrow, DD/MM, DD/MM/YYYY, hoặc YYYY-MM-DD. Mặc định là hôm nay.",
         },
       },
     },
@@ -260,7 +264,8 @@ const CHATBOT_TOOLS: FunctionDeclaration[] = [
       properties: {
         topic: {
           type: SchemaType.STRING,
-          description: "Chủ đề cần hướng dẫn: đặt vé, thanh toán, hoàn vé, tài khoản",
+          description:
+            "Chủ đề cần hướng dẫn: đặt vé, thanh toán, hoàn vé, tài khoản",
         },
       },
     },
@@ -280,8 +285,19 @@ const resolveDate = (dateStr: string): { start: Date; end: Date } => {
     base = new Date();
     base.setDate(base.getDate() + 1);
   } else {
-    base = new Date(dateStr);
-    if (isNaN(base.getTime())) base = new Date();
+    const dmMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/);
+    if (dmMatch) {
+      const day = parseInt(dmMatch[1], 10);
+      const month = parseInt(dmMatch[2], 10) - 1; // month 0-based
+      const year = dmMatch[3]
+        ? parseInt(dmMatch[3], 10)
+        : new Date().getFullYear(); // dùng năm hiện tại nếu không có
+      base = new Date(year, month, day);
+    } else {
+      // ISO YYYY-MM-DD hoặc các định dạng khác
+      base = new Date(dateStr);
+      if (isNaN(base.getTime())) base = new Date();
+    }
   }
 
   // Lấy ngày theo giờ VN để xác định đúng ngày người dùng đang muốn
@@ -290,7 +306,7 @@ const resolveDate = (dateStr: string): { start: Date; end: Date } => {
 
   // Tạo start/end với timezone offset +07:00 tường minh
   const start = new Date(`${vnDateStr}T00:00:00.000+07:00`);
-  const end   = new Date(`${vnDateStr}T23:59:59.999+07:00`);
+  const end = new Date(`${vnDateStr}T23:59:59.999+07:00`);
 
   return { start, end };
 };
@@ -311,7 +327,7 @@ const toVNTimeStr = (date: Date): string =>
 
 const executeToolCall = async (
   toolName: string,
-  args: Record<string, string>
+  args: Record<string, string>,
 ): Promise<any> => {
   switch (toolName) {
     // ── searchFilms ───────────────────────────────────────────────────────────
@@ -328,7 +344,11 @@ const executeToolCall = async (
         query.$or = [
           { title: { $regex: args.keyword, $options: "i" } },
           { description: { $regex: args.keyword, $options: "i" } },
-          { otherTitles: { $elemMatch: { $regex: args.keyword, $options: "i" } } },
+          {
+            otherTitles: {
+              $elemMatch: { $regex: args.keyword, $options: "i" },
+            },
+          },
         ];
       }
       if (args.ageRating) {
@@ -352,7 +372,7 @@ const executeToolCall = async (
       const films = await Film.find(query)
         .populate({ path: "categoryIds", select: "title" })
         .select(
-          "title categoryIds actors directors duration ageRating filmLanguage description availableFormats thumbnail slug isTrending"
+          "title categoryIds actors directors duration ageRating filmLanguage description availableFormats thumbnail slug isTrending",
         )
         .sort({ isTrending: -1, createdAt: -1 })
         .limit(20)
@@ -370,7 +390,11 @@ const executeToolCall = async (
         deleted: false,
         $or: [
           { title: { $regex: args.filmName, $options: "i" } },
-          { otherTitles: { $elemMatch: { $regex: args.filmName, $options: "i" } } },
+          {
+            otherTitles: {
+              $elemMatch: { $regex: args.filmName, $options: "i" },
+            },
+          },
         ],
       })
         .populate({ path: "categoryIds", select: "title" })
@@ -403,8 +427,8 @@ const executeToolCall = async (
       if (args.city) {
         cinemas = cinemas.filter((c: any) =>
           c.cityIds?.some((city: any) =>
-            city.name?.toLowerCase().includes(args.city.toLowerCase())
-          )
+            city.name?.toLowerCase().includes(args.city.toLowerCase()),
+          ),
         );
       }
 
@@ -440,18 +464,27 @@ const executeToolCall = async (
           deleted: false,
           $or: [
             { title: { $regex: args.filmName, $options: "i" } },
-            { otherTitles: { $elemMatch: { $regex: args.filmName, $options: "i" } } },
+            {
+              otherTitles: {
+                $elemMatch: { $regex: args.filmName, $options: "i" },
+              },
+            },
           ],
         }).select("_id");
 
         if (!film) {
-          return { error: `Không tìm thấy phim "${args.filmName}" trong hệ thống` };
+          return {
+            error: `Không tìm thấy phim "${args.filmName}" trong hệ thống`,
+          };
         }
         query.filmId = film._id;
       }
 
       if (args.cinemaName || args.brand || args.city) {
-        const cinemaQuery: any = { status: CommonStatus.ACTIVE, deleted: false };
+        const cinemaQuery: any = {
+          status: CommonStatus.ACTIVE,
+          deleted: false,
+        };
 
         if (args.cinemaName) {
           cinemaQuery.name = { $regex: args.cinemaName, $options: "i" };
@@ -471,8 +504,8 @@ const executeToolCall = async (
         if (args.city) {
           cinemas = cinemas.filter((c: any) =>
             c.cityIds?.some((city: any) =>
-              city.name?.toLowerCase().includes(args.city.toLowerCase())
-            )
+              city.name?.toLowerCase().includes(args.city.toLowerCase()),
+            ),
           );
         }
 
@@ -486,7 +519,10 @@ const executeToolCall = async (
       }
 
       const showtimes = await ShowTime.find(query)
-        .populate({ path: "filmId", select: "title thumbnail duration ageRating slug" })
+        .populate({
+          path: "filmId",
+          select: "title thumbnail duration ageRating slug",
+        })
         .populate({
           path: "cinemaId",
           select: "name address avatar cityIds parentId slug", // ← slug thêm vào đây
@@ -496,7 +532,9 @@ const executeToolCall = async (
           ],
         })
         .populate({ path: "roomId", select: "name" })
-        .select("filmId cinemaId roomId startTime endTime format basePrice seatTypes seats status")
+        .select(
+          "filmId cinemaId roomId startTime endTime format basePrice seatTypes seats status",
+        )
         .sort({ startTime: 1 })
         .limit(50)
         .lean();
@@ -505,7 +543,8 @@ const executeToolCall = async (
         ...st,
         startTime: toVNTimeStr(st.startTime),
         endTime: toVNTimeStr(st.endTime),
-        availableSeats: st.seats?.filter((s: any) => s.status === "available").length ?? 0,
+        availableSeats:
+          st.seats?.filter((s: any) => s.status === "available").length ?? 0,
         totalSeats: st.seats?.length ?? 0,
         seats: undefined,
       }));
@@ -525,7 +564,10 @@ const executeToolCall = async (
         .select("name address avatar cityIds parentId slug") // ← slug thêm vào đây
         .lean();
 
-      if (!cinema) return { error: `Không tìm thấy rạp "${args.cinemaName}" trong hệ thống` };
+      if (!cinema)
+        return {
+          error: `Không tìm thấy rạp "${args.cinemaName}" trong hệ thống`,
+        };
 
       // FIX: resolveDate luôn nhận string — dùng "today" làm fallback tường minh
       const { start, end } = resolveDate(args.date || "today");
@@ -568,7 +610,9 @@ const executeToolCall = async (
           endTime: toVNTimeStr(st.endTime),
           format: st.format,
           basePrice: st.basePrice,
-          availableSeats: (st.seats as any[])?.filter((s) => s.status === "available").length ?? 0,
+          availableSeats:
+            (st.seats as any[])?.filter((s) => s.status === "available")
+              .length ?? 0,
         });
       }
 
@@ -622,7 +666,7 @@ export const processChatMessage = async (
   message: string,
   history: IChatHistory[],
   onChunk: (text: string) => void,
-  onStatus: (status: string, tool?: string) => void
+  onStatus: (status: string, tool?: string) => void,
 ): Promise<void> => {
   // Giữ tối đa 20 lượt chat gần nhất để tránh vượt token
   const trimmedHistory = history.slice(-20);
@@ -632,14 +676,14 @@ export const processChatMessage = async (
 
   // ── Helper: thử gọi Gemini với fallback model khi bị overload ─────────────
   const withFallback = async <T>(
-    fn: (model: ReturnType<typeof getModel>) => Promise<T>
+    fn: (model: ReturnType<typeof getModel>) => Promise<T>,
   ): Promise<T> => {
     try {
       return await fn(getModel(PRIMARY_MODEL));
     } catch (err: any) {
       if (isOverloadError(err)) {
         console.warn(
-          `[Chatbot] ${PRIMARY_MODEL} quá tải, chuyển sang ${FALLBACK_MODEL}`
+          `[Chatbot] ${PRIMARY_MODEL} quá tải, chuyển sang ${FALLBACK_MODEL}`,
         );
         return await fn(getModel(FALLBACK_MODEL));
       }
@@ -656,7 +700,7 @@ export const processChatMessage = async (
         ...trimmedHistory,
         { role: "user", parts: [{ text: message }] },
       ],
-    })
+    }),
   );
 
   const firstResponse = firstResult.response;
@@ -671,7 +715,10 @@ export const processChatMessage = async (
     const { name, args } = firstPart.functionCall;
     onStatus("fetching", name);
 
-    const toolResult = await executeToolCall(name, (args as Record<string, string>) || {});
+    const toolResult = await executeToolCall(
+      name,
+      (args as Record<string, string>) || {},
+    );
 
     extraTurns = [
       firstContent,
@@ -702,7 +749,7 @@ export const processChatMessage = async (
   const streamResult = await withFallback((model) =>
     model.generateContentStream({
       contents: [...trimmedHistory, userTurn, ...extraTurns],
-    })
+    }),
   );
 
   for await (const chunk of streamResult.stream) {
