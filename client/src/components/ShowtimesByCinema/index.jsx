@@ -77,8 +77,7 @@ const ShowtimesByCinema = () => {
             cinemaCityIds.has(c._id),
           );
           setSelectedCityId(firstCityWithCinema?._id || sortedCities[0]._id);
-        }
-        console.log("Cinema sample:", activeCinemas[0]);
+        }        
       } catch (err) {
         messageApi.error("Không thể tải dữ liệu rạp và thành phố");
       } finally {

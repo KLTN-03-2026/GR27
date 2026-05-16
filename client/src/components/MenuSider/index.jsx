@@ -8,7 +8,7 @@ import {
   CalendarOutlined,
   UserOutlined,
   CommentOutlined,
-  GiftOutlined,
+  
   ShoppingCartOutlined,
 } from "@ant-design/icons";
 
@@ -55,12 +55,7 @@ const MenuSider = () => {
       label: <Link to="/admin/orders">Quản lý đặt vé</Link>,
       icon: <ShoppingCartOutlined />,
       key: "/admin/orders",
-    },
-     {
-      label: <Link to="/admin/promotions">Quản lý khuyến mãi</Link>,
-      icon: <GiftOutlined />,
-      key: "/admin/promotions",
-    },
+    }
   ];
 
   return (
