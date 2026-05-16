@@ -1,25 +1,23 @@
 // src/components/CinemaRoom3D/CinemaSeat3D.jsx
 //
-// Ghế rạp dựng bằng Three.js geometry thuần — không dùng .glb
-// Nhẹ hơn rất nhiều, hỗ trợ 100+ ghế không lag
+// Tối ưu performance: gộp toàn bộ geometry của 1 ghế thành 1 mesh duy nhất
+// dùng BufferGeometryUtils.mergeGeometries → giảm draw call từ 7 xuống còn 2
+// (1 cho fabric, 1 cho armrest+leg vì khác material)
 //
-// Cấu trúc ghế:
-//   [headrest]  ← gối tựa đầu
-//   [backrest]  ← lưng ghế (nghiêng nhẹ)
-//   [seat]      ← mặt ngồi (có thể gập lên)
-//   [armrest L/R] ← tay vịn (màu đen)
-//   [legs]      ← 2 chân đỡ
+// Trước: 100 ghế × 7 mesh = 700 draw calls
+// Sau:   100 ghế × 2 mesh = 200 draw calls
 
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // -------------------------------------------------------
-// Màu theo loại ghế
+// Màu theo loại / trạng thái ghế
 // -------------------------------------------------------
 const TYPE_COLORS = {
-  standard: '#9f1239',  // đỏ gạch
-  vip:      '#6d28d9',  // tím
-  couple:   '#be185d',  // hồng
+  standard: '#9f1239',
+  vip:      '#6d28d9',
+  couple:   '#be185d',
 };
 const STATUS_COLORS = {
   booked:   '#374151',
@@ -27,19 +25,11 @@ const STATUS_COLORS = {
   selected: '#16a34a',
   viewing:  '#d97706',
 };
-const ARMREST_COLOR  = '#111111';
-const LEG_COLOR      = '#1a1a1a';
+const ARMREST_COLOR = '#111111';
 
 // -------------------------------------------------------
-// Shared geometries (tạo 1 lần, dùng lại cho tất cả ghế)
+// Material cache
 // -------------------------------------------------------
-const geoCache = {};
-const getGeo = (key, factory) => {
-  if (!geoCache[key]) geoCache[key] = factory();
-  return geoCache[key];
-};
-
-// Material cache theo màu hex
 const matCache = {};
 const getFabricMat = (hex) => {
   if (!matCache[hex]) {
@@ -54,64 +44,98 @@ const getFabricMat = (hex) => {
   }
   return matCache[hex];
 };
-const armrestMat = new THREE.MeshStandardMaterial({ color: ARMREST_COLOR, roughness: 0.4, metalness: 0.3 });
-const legMat     = new THREE.MeshStandardMaterial({ color: LEG_COLOR,     roughness: 0.5, metalness: 0.4 });
+
+const armLegMat = new THREE.MeshStandardMaterial({
+  color: ARMREST_COLOR,
+  roughness: 0.45,
+  metalness: 0.3,
+});
 
 // -------------------------------------------------------
-// ProceduralSeat — render 1 ghế bằng BoxGeometry
+// Tạo geometry đã transform sẵn (apply matrix) để merge được
+// -------------------------------------------------------
+const makeBox = (w, h, d, px, py, pz, rx = 0) => {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mat = new THREE.Matrix4();
+  if (rx !== 0) mat.makeRotationX(rx);
+  const trans = new THREE.Matrix4().makeTranslation(px, py, pz);
+  mat.premultiply(trans);
+  geo.applyMatrix4(mat);
+  return geo;
+};
+
+// -------------------------------------------------------
+// Cache merged geometry theo key (color + armrest config)
+// Tránh tạo lại mỗi lần re-render
+// -------------------------------------------------------
+const geoCache = {};
+
+const buildFabricGeo = (showArmrestLeft, showArmrestRight) => {
+  const key = `fabric_${showArmrestLeft}_${showArmrestRight}`;
+  if (geoCache[key]) return geoCache[key];
+
+  const parts = [
+    // Lưng ghế (nghiêng ~8° = 0.14 rad quanh X, translate về sau)
+    makeBox(0.78, 0.72, 0.1,  0,     0.52, -0.22, 0.14),
+    // Gối tựa đầu
+    makeBox(0.42, 0.18, 0.1,  0,     0.96, -0.20, 0.14),
+    // Mặt ngồi
+    makeBox(0.78, 0.1,  0.6,  0,     0.14,  0.04),
+  ];
+
+  if (showArmrestLeft) {
+    parts.push(makeBox(0.08, 0.12, 0.55, -0.44, 0.26, 0.02)); // thân tay vịn trái
+    parts.push(makeBox(0.1,  0.05, 0.5,  -0.44, 0.345, 0.005)); // mặt trên tay vịn trái
+  }
+  if (showArmrestRight) {
+    parts.push(makeBox(0.08, 0.12, 0.55,  0.44, 0.26, 0.02));  // thân tay vịn phải
+    parts.push(makeBox(0.1,  0.05, 0.5,   0.44, 0.345, 0.005)); // mặt trên tay vịn phải
+  }
+
+  const merged = mergeGeometries(parts);
+  parts.forEach(g => g.dispose());
+  geoCache[key] = merged;
+  return merged;
+};
+
+const buildLegGeo = () => {
+  if (geoCache['legs']) return geoCache['legs'];
+
+  const parts = [
+    makeBox(0.06, 0.38, 0.06, -0.28, -0.1, 0.22), // chân trái
+    makeBox(0.06, 0.38, 0.06,  0.28, -0.1, 0.22), // chân phải
+    makeBox(0.72, 0.05, 0.12,  0,   -0.26, 0.22), // đế nối
+  ];
+
+  const merged = mergeGeometries(parts);
+  parts.forEach(g => g.dispose());
+  geoCache['legs'] = merged;
+  return merged;
+};
+
+// -------------------------------------------------------
+// ProceduralSeat — chỉ 2 mesh thay vì 7
 // -------------------------------------------------------
 const ProceduralSeat = ({ color, showArmrestLeft = true, showArmrestRight = true }) => {
   const fabricMat = useMemo(() => getFabricMat(color), [color]);
-
-  // Geometry (shared)
-  const backGeo     = getGeo('back',     () => new THREE.BoxGeometry(0.78, 0.72, 0.1));
-  const headGeo     = getGeo('head',     () => new THREE.BoxGeometry(0.42, 0.18, 0.1));
-  const seatGeo     = getGeo('seat',     () => new THREE.BoxGeometry(0.78, 0.1,  0.6));
-  const armGeo      = getGeo('arm',      () => new THREE.BoxGeometry(0.08, 0.12, 0.55));
-  const armTopGeo   = getGeo('armtop',   () => new THREE.BoxGeometry(0.1,  0.05, 0.5));
-  const legGeo      = getGeo('leg',      () => new THREE.BoxGeometry(0.06, 0.38, 0.06));
-  const baseGeo     = getGeo('base',     () => new THREE.BoxGeometry(0.72, 0.05, 0.12));
+  const fabricGeo = useMemo(
+    () => buildFabricGeo(showArmrestLeft, showArmrestRight),
+    [showArmrestLeft, showArmrestRight]
+  );
+  const legGeo = useMemo(() => buildLegGeo(), []);
 
   return (
     <group>
-      {/* === LƯNG GHẾ (nghiêng nhẹ ra sau ~8°) === */}
-      <group rotation={[0.14, 0, 0]} position={[0, 0.52, -0.22]}>
-        <mesh geometry={backGeo} material={fabricMat} castShadow />
-        {/* Gối tựa đầu */}
-        <mesh geometry={headGeo} material={fabricMat} position={[0, 0.44, 0.02]} />
-      </group>
-
-      {/* === MẶT NGỒI === */}
-      <mesh geometry={seatGeo} material={fabricMat} position={[0, 0.14, 0.04]} castShadow />
-
-      {/* === TAY VỊN TRÁI === */}
-      {showArmrestLeft && (
-        <group position={[-0.44, 0.18, 0.02]}>
-          <mesh geometry={armGeo}    material={armrestMat} />
-          <mesh geometry={armTopGeo} material={armrestMat} position={[0, 0.085, -0.015]} />
-        </group>
-      )}
-
-      {/* === TAY VỊN PHẢI === */}
-      {showArmrestRight && (
-        <group position={[0.44, 0.18, 0.02]}>
-          <mesh geometry={armGeo}    material={armrestMat} />
-          <mesh geometry={armTopGeo} material={armrestMat} position={[0, 0.085, -0.015]} />
-        </group>
-      )}
-
-      {/* === CHÂN GHẾ (2 chân trước) === */}
-      <mesh geometry={legGeo} material={legMat} position={[-0.28, -0.1, 0.22]} />
-      <mesh geometry={legGeo} material={legMat} position={[ 0.28, -0.1, 0.22]} />
-
-      {/* === ĐẾ GHẾ (thanh nối 2 chân) === */}
-      <mesh geometry={baseGeo} material={legMat} position={[0, -0.26, 0.22]} />
+      {/* Fabric: lưng + đầu + mặt ngồi + tay vịn — 1 draw call */}
+      <mesh geometry={fabricGeo} material={fabricMat} castShadow />
+      {/* Legs: 2 chân + đế — 1 draw call */}
+      <mesh geometry={legGeo} material={armLegMat} />
     </group>
   );
 };
 
 // -------------------------------------------------------
-// CinemaSeat3D — public component
+// CinemaSeat3D — public component (API không đổi)
 // -------------------------------------------------------
 const CinemaSeat3D = ({
   seat,
@@ -141,7 +165,7 @@ const CinemaSeat3D = ({
       rotation={rotation}
       scale={s}
       onClick={(e) => { e.stopPropagation(); if (!isBooked) onSeatClick?.(seat); }}
-      onPointerOver={(e) => { e.stopPropagation(); if (!isBooked) document.body.style.cursor = 'pointer'; onSeatHover?.(seat); }}
+      onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; onSeatHover?.(seat); }}
       onPointerOut={(e)  => { e.stopPropagation(); document.body.style.cursor = 'default'; onSeatHover?.(null); }}
     >
       <ProceduralSeat

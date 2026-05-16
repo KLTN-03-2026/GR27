@@ -22,7 +22,7 @@
 import React from 'react';
 import CinemaSeat3D from './CinemaSeat3D';
 
-const HALF_GAP = 0.44; // = vị trí tay vịn local (0.44) → 2 tay vịn trong chạm nhau tại x=0
+const HALF_GAP =0.38; // = vị trí tay vịn local (0.44) → 2 tay vịn trong chạm nhau tại x=0
 
 const CoupleSeat3D = ({
   seat,
@@ -44,7 +44,7 @@ const CoupleSeat3D = ({
   const handleClick = () => onSeatClick?.(seat);
 
   return (
-    <group position={position}>
+    <group position={position} scale={[1.1, 1, 1.3]}>
       {/*
        * Ghế TRÁI (x = -HALF_GAP)
        * rotation [0, PI, 0] → local X bị flip

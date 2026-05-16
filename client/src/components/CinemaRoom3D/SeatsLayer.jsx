@@ -1,15 +1,63 @@
 // src/components/CinemaRoom3D/SeatsLayer.jsx
+//
+// Tối ưu: bọc CinemaSeat3D và CoupleSeat3D bằng React.memo
+// → chỉ re-render ghế khi đúng ghế đó thay đổi trạng thái
+// → tránh toàn bộ 100+ ghế re-render khi hover/click 1 ghế
+
 import React from 'react';
 import CinemaSeat3D from './CinemaSeat3D';
 import CoupleSeat3D from './CoupleSeat3D';
 
-/**
- * Render toàn bộ ghế trong phòng từ processedSeats
- *
- * - Ghế thường/VIP → CinemaSeat3D
- * - Ghế đôi → CoupleSeat3D (render 2 ghế mirror)
- * - Ghế partner (partnerKey) → bỏ qua, đã render trong CoupleSeat3D
- */
+// -------------------------------------------------------
+// Memo wrapper cho ghế thường/VIP
+// So sánh đúng các prop ảnh hưởng visual → skip re-render nếu không đổi
+// -------------------------------------------------------
+const MemoSeat = React.memo(
+  ({ seat, isSelected, isBooked, isViewing, onSeatClick, onSeatHover }) => (
+    <CinemaSeat3D
+      seat={seat}
+      position={seat.position}
+      rotation={[0, Math.PI, 0]}
+      isSelected={isSelected}
+      isBooked={isBooked}
+      isViewing={isViewing}
+      onSeatClick={onSeatClick}
+      onSeatHover={onSeatHover}
+    />
+  ),
+  (prev, next) =>
+    prev.isSelected === next.isSelected &&
+    prev.isBooked   === next.isBooked   &&
+    prev.isViewing  === next.isViewing  &&
+    prev.seat.seatKey === next.seat.seatKey
+);
+
+// -------------------------------------------------------
+// Memo wrapper cho ghế đôi
+// -------------------------------------------------------
+const MemoCoupleSeat = React.memo(
+  ({ seat, partnerSeat, selectedSeats, onSeatClick, onSeatHover, viewingSeat }) => (
+    <CoupleSeat3D
+      seat={seat}
+      partnerSeat={partnerSeat}
+      position={seat.position}
+      selectedSeats={selectedSeats}
+      onSeatClick={onSeatClick}
+      onSeatHover={onSeatHover}
+      viewingSeat={viewingSeat}
+    />
+  ),
+  (prev, next) => {
+    const mainSame    = prev.seat.seatKey === next.seat.seatKey;
+    const selectedSame = prev.selectedSeats === next.selectedSeats;
+    const viewingSame  = prev.viewingSeat?.seatKey === next.viewingSeat?.seatKey;
+    return mainSame && selectedSame && viewingSame;
+  }
+);
+
+// -------------------------------------------------------
+// SeatsLayer
+// -------------------------------------------------------
 const SeatsLayer = ({
   processedSeats = [],
   partnerKeys,
@@ -19,35 +67,37 @@ const SeatsLayer = ({
   viewingSeat,
   showtime,
 }) => {
-  // Map seatKey → seat object để lookup nhanh partner
   const seatMap = React.useMemo(() => {
     const map = {};
     processedSeats.forEach(s => { map[s.seatKey] = s; });
     return map;
   }, [processedSeats]);
 
-  // Chỉ render ghế không phải partner
-  const renderableSeats = React.useMemo(() => {
-    return processedSeats.filter(s => !partnerKeys.has(s.seatKey));
-  }, [processedSeats, partnerKeys]);
+  const renderableSeats = React.useMemo(
+    () => processedSeats.filter(s => !partnerKeys.has(s.seatKey)),
+    [processedSeats, partnerKeys]
+  );
+
+  // Set seatKey đang selected để so sánh nhanh O(1) thay vì Array.some O(n)
+  const selectedSet = React.useMemo(
+    () => new Set(selectedSeats.map(s => s.seatKey)),
+    [selectedSeats]
+  );
 
   return (
     <group>
       {renderableSeats.map(seat => {
-        const isBooked = seat.status === 'booked' || seat.status === 'locked';
-        const isSelected = selectedSeats.some(s => s.seatKey === seat.seatKey);
-        const isViewing = viewingSeat?.seatKey === seat.seatKey;
+        const isBooked   = seat.status === 'booked' || seat.status === 'locked';
+        const isSelected = selectedSet.has(seat.seatKey);
+        const isViewing  = viewingSeat?.seatKey === seat.seatKey;
 
         if (seat.type === 'couple') {
-          // Tìm partner seat (nếu có) để biết status
           const partnerSeat = seat.partnerSeatKey ? seatMap[seat.partnerSeatKey] : null;
-
           return (
-            <CoupleSeat3D
+            <MemoCoupleSeat
               key={seat.seatKey}
               seat={seat}
               partnerSeat={partnerSeat}
-              position={seat.position}
               selectedSeats={selectedSeats}
               onSeatClick={onSeatClick}
               onSeatHover={onSeatHover}
@@ -57,11 +107,9 @@ const SeatsLayer = ({
         }
 
         return (
-          <CinemaSeat3D
+          <MemoSeat
             key={seat.seatKey}
             seat={seat}
-            position={seat.position}
-            rotation={[0, Math.PI, 0]} // Ghế nhìn về phía màn hình (z âm)
             isSelected={isSelected}
             isBooked={isBooked}
             isViewing={isViewing}

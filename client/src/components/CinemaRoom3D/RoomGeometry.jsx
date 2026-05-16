@@ -24,7 +24,7 @@ const RoomGeometry = ({
   const screenZ = -halfD + 0.1;
   const screenWidth = width * 0.85;
   const screenHeight = height * 0.55;
-  const screenY = height * 0.38;
+  const screenY = height * 0.45;
 
   const ceilingLightRows = 2;
   const ceilingLightCols = 3;
