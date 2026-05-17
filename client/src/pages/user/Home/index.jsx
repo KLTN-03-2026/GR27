@@ -1,4 +1,3 @@
-// src/pages/user/Home/index.jsx
 import { useState, useEffect } from "react";
 import { message } from "antd";
 

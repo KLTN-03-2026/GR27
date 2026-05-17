@@ -1,4 +1,3 @@
-// src/pages/admin/orders/OrderDetailPage.jsx
 import React, { useState, useEffect } from "react";
 import {
   Card,

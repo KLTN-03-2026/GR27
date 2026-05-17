@@ -1,4 +1,3 @@
-// src/components/CinemaRoom3D/Tooltip3D.jsx
 import React from 'react';
 import { Html } from '@react-three/drei';
 

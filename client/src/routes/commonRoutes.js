@@ -49,7 +49,7 @@ const commonRoutes = [
       }
     ]
   },
-   // 👈 Error pages - không cần layout
+   
   {
     path: "/unauthorized",
     element: <Unauthorized />  // 403 Forbidden
@@ -58,7 +58,7 @@ const commonRoutes = [
     path: "/404",
     element: <NotFound />      // 404 Not Found
   },
-  // 👈 Catch-all route - phải đặt cuối cùng
+  
   {
     path: "*",
     element: <NotFound />      // Bất kỳ route nào không match sẽ hiển thị 404

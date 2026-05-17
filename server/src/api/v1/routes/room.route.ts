@@ -9,7 +9,7 @@ import { validateCreateRoom, validateUpdateRoom } from "../validators/room.valid
 // [GET] /api/v1/rooms
 router.get("/", optionalAuthMiddleware, roomController.index);
 
-// [GET] /api/v1/rooms/trash  (admin) — đặt TRƯỚC /:id
+// [GET] /api/v1/rooms/trash  (admin)
 router.get("/trash", authMiddleware(UserRole.ADMIN), roomController.getTrash);
 
 // [GET] /api/v1/rooms/:id  (admin)
@@ -21,7 +21,7 @@ router.post("/", authMiddleware(UserRole.ADMIN), validateCreateRoom, roomControl
 // [PATCH] /api/v1/rooms/:id  — edit hoặc khôi phục ({ deleted: false })
 router.patch("/:id", authMiddleware(UserRole.ADMIN), validateUpdateRoom, roomController.edit);
 
-// [DELETE] /api/v1/rooms/:id/permanent  — xóa vĩnh viễn (đặt TRƯỚC /:id)
+// [DELETE] /api/v1/rooms/:id/permanent 
 router.delete("/:id/permanent", authMiddleware(UserRole.ADMIN), roomController.permanentDelete);
 
 // [DELETE] /api/v1/rooms/:id  — xóa mềm

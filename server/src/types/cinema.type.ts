@@ -12,7 +12,7 @@ export interface ICinema {
   address: string;
   avatar: string;
   description: string;
-  cityIds: Schema.Types.ObjectId[]; // ✅ THAY ĐỔI: từ cityId thành cityIds (mảng)
+  cityIds: Schema.Types.ObjectId[]; 
   slug: string;
   status: CommonStatus; // Sử dụng enum đã định nghĩa
   deleted: boolean; // Dùng để đánh dấu xóa mềm

@@ -5,7 +5,6 @@ import { UserRole } from "../../../types/user.type";
 
 const router: Router = Router();
 
-// Chỉ admin mới được dùng TMDb API
 router.get("/search", authMiddleware(UserRole.ADMIN), tmdbController.searchFilms);
 router.get("/:tmdbId", authMiddleware(UserRole.ADMIN), tmdbController.getFilmDetail);
 

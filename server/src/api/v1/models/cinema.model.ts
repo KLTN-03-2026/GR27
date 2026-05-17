@@ -31,7 +31,7 @@ const cinemaSchema = new Schema<ICinemaDocument>(
       type: String,
       required: true,
     },
-    // ✅ THAY ĐỔI: từ cityId thành cityIds (mảng)
+    
     cityIds: [{
       type: Schema.Types.ObjectId,
       ref: "City",
@@ -64,7 +64,7 @@ const cinemaSchema = new Schema<ICinemaDocument>(
 
 // Tối ưu hóa truy vấn bằng cách tạo index cho các trường hay được tìm kiếm
 cinemaSchema.index({ name: "text", slug: 1 }); // Index cho tìm kiếm text trên title và truy vấn nhanh theo slug
-cinemaSchema.index({ cityIds: 1 }); // ✅ THAY ĐỔI: Index cho tìm kiếm nhanh theo cityIds (mảng)
+cinemaSchema.index({ cityIds: 1 }); // Index cho tìm kiếm nhanh theo cityIds (mảng)
 cinemaSchema.index({ parentId: 1 }); // Index cho tìm kiếm nhanh theo parentId
 cinemaSchema.index({ slug: 1, deleted: 1, status: 1 });
 cinemaSchema.index({ slug: 1, deleted: 1});

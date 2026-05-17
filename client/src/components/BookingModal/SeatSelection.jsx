@@ -1,4 +1,3 @@
-// src/components/BookingModal/SeatSelection.jsx
 import React, { useState, useEffect } from 'react';
 import { Space, Tag, message, Button } from 'antd';
 import { VideoCameraOutlined, AppstoreOutlined } from '@ant-design/icons';

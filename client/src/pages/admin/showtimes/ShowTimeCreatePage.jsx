@@ -12,7 +12,6 @@ function ShowTimeCreatePage() {
   const handleCreateShowTime = async (values) => {
     setLoading(true);
     try {
-      console.log("Creating showtime with data:", values);
       
       const result = await createShowTime(values);
       if (result) {

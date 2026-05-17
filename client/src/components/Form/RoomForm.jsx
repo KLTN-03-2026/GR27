@@ -171,7 +171,7 @@ function RoomForm({
       // Thêm seatLayout vào values
       values.seatLayout = seatLayout;
 
-      // Fix: Xử lý status đúng cách
+    
       if (typeof values.status === 'boolean') {
         values.status = values.status ? "active" : "inactive";
       }

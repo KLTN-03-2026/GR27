@@ -232,7 +232,7 @@ export const handlePaymentWebhook = async (webhookBody: any) => {
   const { code, desc, orderCode   } = verifiedData;
 
   if (orderCode === 123) {
-    return { alreadyProcessed: true }; // hoặc return { isTest: true }
+    return { alreadyProcessed: true }; 
   }
 
   const order = await Order.findOne({ transactionId: String(orderCode) });

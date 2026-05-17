@@ -49,7 +49,6 @@ const ShowTimeDetailPage = () => {
       setError(null);
       const result = await getShowTimeById(id);
       setShowTimeData(result.data);
-      console.log("ShowTime data:", result.data);
     } catch (err) {
       console.error("Error fetching showtime:", err);
       setError(err.response?.data?.message || "Không thể tải thông tin suất chiếu");

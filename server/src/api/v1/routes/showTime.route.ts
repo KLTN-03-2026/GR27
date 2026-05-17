@@ -13,7 +13,7 @@ import {
 // [GET] /api/v1/show-times
 router.get("/", optionalAuthMiddleware, showTimeController.index);
 
-// [GET] /api/v1/show-times/trash  (admin) — đặt TRƯỚC /:id
+// [GET] /api/v1/show-times/trash  (admin)
 router.get("/trash", authMiddleware(UserRole.ADMIN), showTimeController.getTrash);
 
 // [GET] /api/v1/show-times/film/:filmId
@@ -25,7 +25,7 @@ router.get("/cinema/:cinemaId", showTimeController.getByCinemaId);
 // [GET] /api/v1/show-times/:id
 router.get("/:id", optionalAuthMiddleware, showTimeController.getById);
 
-// [POST] /api/v1/show-times/bulk  — tạo hàng loạt (đặt TRƯỚC / để tránh conflict route)
+// [POST] /api/v1/show-times/bulk  — tạo hàng loạt 
 router.post(
   "/bulk",
   authMiddleware(UserRole.ADMIN),
@@ -39,7 +39,7 @@ router.post("/", authMiddleware(UserRole.ADMIN), validateCreateShowTime, showTim
 // [PATCH] /api/v1/show-times/:id
 router.patch("/:id", authMiddleware(UserRole.ADMIN), validateUpdateShowTime, showTimeController.edit);
 
-// [DELETE] /api/v1/show-times/:id/permanent  — xóa vĩnh viễn (đặt TRƯỚC /:id)
+// [DELETE] /api/v1/show-times/:id/permanent 
 router.delete("/:id/permanent", authMiddleware(UserRole.ADMIN), showTimeController.permanentDelete);
 
 // [DELETE] /api/v1/show-times/:id  — xóa mềm

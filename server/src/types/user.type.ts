@@ -18,9 +18,7 @@ export interface IUser {
   address?: string;
   avatar?: string;
   role: UserRole;
-  // ✅ THAY ĐỔI: Bỏ token, thêm refreshToken
-  // token: string; // ❌ Xóa trường này
-  refreshToken?: string; // ✅ Lưu refresh token trong DB để có thể revoke
+  refreshToken?: string; 
   status: UserStatus;
   deleted?: boolean;
   deletedAt?: Date;

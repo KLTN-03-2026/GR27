@@ -1,4 +1,3 @@
-// src/pages/admin/cinemas/CinemaCreatePage.jsx
 import { useState } from "react";
 import { message, Spin } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -13,7 +12,7 @@ function CinemaCreatePage() {
   const handleCreateCinema = async (values) => {
     setLoading(true);
     try {
-      console.log("Creating cinema with data:", values);
+
       
       const result = await createCinema(values);
       if (result) {

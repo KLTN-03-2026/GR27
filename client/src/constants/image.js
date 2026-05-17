@@ -1,4 +1,3 @@
-// src/constants/images.js
 export const DEFAULT_IMAGES = {
   FILM_POSTER: "https://i.pinimg.com/736x/0b/0a/de/0b0adeec0cb5e9a427a616df27ba04f3.jpg",
   CINEMA_LOGO: "https://www.shutterstock.com/image-vector/image-icon-trendy-flat-style-600nw-643080895.jpg",

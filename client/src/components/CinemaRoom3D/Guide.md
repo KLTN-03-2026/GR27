@@ -134,8 +134,6 @@ const SEAT_COLORS = {
 // Sau khi clone scene:
 clonedScene.traverse((child) => {
   if (child.isMesh) {
-    // Debug lần đầu: console.log(child.name) để biết tên mesh vải
-    // Chỉ đổi mesh là phần vải (fabric), giữ nguyên khung đen
     if (child.name.toLowerCase().includes('fabric') || 
         child.name.toLowerCase().includes('seat') ||
         child.name.toLowerCase().includes('cushion')) {

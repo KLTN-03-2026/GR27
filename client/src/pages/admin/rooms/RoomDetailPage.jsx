@@ -41,7 +41,6 @@ const RoomDetailPage = () => {
       setError(null);
       const result = await getRoomById(id);
       setRoomData(result.data);
-      console.log("Room data:", result.data);
     } catch (err) {
       console.error("Error fetching room:", err);
       setError(err.response?.data?.message || "Không thể tải thông tin phòng chiếu");

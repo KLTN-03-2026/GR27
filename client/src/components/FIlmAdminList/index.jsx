@@ -46,7 +46,7 @@ const FilmAdminList = () => {
       setLoading(true);
       setError(null);
       const result = await getAllFilms();
-      console.log('result', result);
+      
       setFilms(result.data || []);
     } catch (err) {
       console.error('Error fetching films:', err);

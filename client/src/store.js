@@ -8,7 +8,7 @@ import allReducers from "./redux/reducers";
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth"] // ✅ chỉ persist reducer `auth`
+  whitelist: ["auth"] //  chỉ persist reducer `auth`
 };
 
 // Gộp reducer persist

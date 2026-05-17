@@ -1,4 +1,3 @@
-// src/services/orderServices.js
 import { get, patch, post } from "../utils";
 import { API_ENDPOINTS } from "../constants";
 /**

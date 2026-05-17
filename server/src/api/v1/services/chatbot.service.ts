@@ -77,9 +77,8 @@ const BOOKING_GUIDE: Record<string, string> = {
   "thanh toán": `PHƯƠNG THỨC THANH TOÁN TRÊN MOVIX:
 - PayOS (QR Code hoặc thẻ ATM nội địa)
 - Ví điện tử (Momo, ZaloPay)
-- Tiền mặt tại quầy
 
-Lưu ý: Hoàn thành thanh toán trong 10 phút sau khi chọn ghế, sau đó ghế sẽ tự động được giải phóng.`,
+Lưu ý: Hoàn thành thanh toán trong 15 phút sau khi chọn ghế, sau đó ghế sẽ tự động được giải phóng.`,
 
   "hoàn vé": `CHÍNH SÁCH HOÀN/ĐỔI VÉ MOVIX:
 - Hiện tại hệ thống chúng tôi không hỗ trợ hoàn vé
@@ -273,7 +272,6 @@ const CHATBOT_TOOLS: FunctionDeclaration[] = [
 ];
 
 // ── Helper: resolve ngày từ chuỗi "today"/"tomorrow"/ISO sang khoảng UTC+7 ────
-// FIX: Tính start/end theo giờ Việt Nam (UTC+7) thay vì UTC để tránh lệch ngày
 
 const resolveDate = (dateStr: string): { start: Date; end: Date } => {
   const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
@@ -312,8 +310,7 @@ const resolveDate = (dateStr: string): { start: Date; end: Date } => {
 };
 
 // ── Helper: format Date → "HH:mm" theo giờ VN (UTC+7) ──────────────────────
-// FIX TIMEZONE DISPLAY: MongoDB lưu UTC, trả thẳng ISO string cho Gemini sẽ bị
-// đọc sai giờ (lệch 7 tiếng). Convert sang giờ VN trước khi đưa vào response.
+// Convert sang giờ VN trước khi đưa vào response.
 
 const toVNTimeStr = (date: Date): string =>
   new Date(date).toLocaleString("vi-VN", {
@@ -323,7 +320,7 @@ const toVNTimeStr = (date: Date): string =>
     hour12: false,
   });
 
-// ── Thực thi từng tool call — tái sử dụng models sẵn có ─────────────────────
+// ── Thực thi từng tool call ─────────────────────
 
 const executeToolCall = async (
   toolName: string,
@@ -442,10 +439,6 @@ const executeToolCall = async (
         deleted: false,
       };
 
-      // FIX 1: Chỉ filter theo ngày khi user thực sự truyền date.
-      // Nếu không có date → lấy suất từ đầu ngày hôm nay theo giờ VN (UTC+7) trở đi.
-      // Dùng đầu ngày thay vì new Date() để không bỏ sót suất đã chiếu sáng nay
-      // (ví dụ hỏi lúc 15:00 vẫn thấy suất 08:00 để chatbot có đủ ngữ cảnh tư vấn).
       if (args.date) {
         const { start, end } = resolveDate(args.date);
         query.startTime = { $gte: start, $lte: end };
@@ -457,8 +450,6 @@ const executeToolCall = async (
         query.startTime = { $gte: startOfTodayVN };
       }
 
-      // FIX 2: Nếu filmName không tìm thấy trong DB → trả về lỗi rõ ràng
-      // thay vì bỏ qua filter và trả về toàn bộ suất chiếu (gây Gemini đọc sai).
       if (args.filmName) {
         const film = await Film.findOne({
           deleted: false,
@@ -525,7 +516,7 @@ const executeToolCall = async (
         })
         .populate({
           path: "cinemaId",
-          select: "name address avatar cityIds parentId slug", // ← slug thêm vào đây
+          select: "name address avatar cityIds parentId slug",
           populate: [
             { path: "cityIds", select: "name" },
             { path: "parentId", select: "name" },
@@ -561,7 +552,7 @@ const executeToolCall = async (
       })
         .populate({ path: "cityIds", select: "name" })
         .populate({ path: "parentId", select: "name" })
-        .select("name address avatar cityIds parentId slug") // ← slug thêm vào đây
+        .select("name address avatar cityIds parentId slug") 
         .lean();
 
       if (!cinema)
@@ -569,7 +560,7 @@ const executeToolCall = async (
           error: `Không tìm thấy rạp "${args.cinemaName}" trong hệ thống`,
         };
 
-      // FIX: resolveDate luôn nhận string — dùng "today" làm fallback tường minh
+      
       const { start, end } = resolveDate(args.date || "today");
 
       const showtimes = await ShowTime.find({

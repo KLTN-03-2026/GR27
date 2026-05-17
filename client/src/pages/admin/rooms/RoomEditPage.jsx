@@ -23,7 +23,6 @@ function RoomEditPage() {
         const result = await getRoomById(id);
         const dataRoom = result.data;
         setRoomData(dataRoom);
-        console.log('Room data:', result);
       } catch (err) {
         console.error("Error fetching room:", err);
         setError(err.response?.data?.message || "Không thể tải thông tin phòng chiếu");
@@ -43,7 +42,7 @@ function RoomEditPage() {
   const handleUpdateRoom = async (values) => {
     setLoading(true);
     try {
-      console.log("Updating room with data:", values);
+
       
       const result = await updateRoom(id, values);
       if (result) {

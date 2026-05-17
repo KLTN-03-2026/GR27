@@ -6,7 +6,6 @@ import * as dashboardController from "../controllers/dashboard.controller";
 import { authMiddleware } from "../../../middlewares/auth.middleware";
 import { UserRole } from "../../../types/user.type";
 
-// Tất cả các route dashboard đều yêu cầu quyền ADMIN
 
 // [GET] OVERVIEW STATISTICS: /api/v1/dashboard/overview
 // Query: ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD

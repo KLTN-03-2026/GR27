@@ -1,6 +1,5 @@
 import { Schema } from "mongoose";
 import { CommonStatus } from "./common.type";
-// ✅ Import ISeat và SeatType để tái sử dụng
 import { ISeat, SeatType } from "./room.type";
 
 /**

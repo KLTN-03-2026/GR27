@@ -1,12 +1,11 @@
-// src/redux/reducers/auth.reducer.js
 import { ROLES } from "../../constants";
 import { SET_USER, LOGOUT } from "../actions/auth.action";
 
 const initialState = {
   user: null,
   isAuthenticated: false,
-  loading: false,    // 👈 trạng thái đang tải
-  error: null,       // 👈 lưu lỗi nếu có
+  loading: false,    
+  error: null,       
 };
 
 const authReducer = (state = initialState, action) => {
@@ -23,7 +22,7 @@ const authReducer = (state = initialState, action) => {
         ...state,
         user: action.payload,
         isAuthenticated: true,
-        loading: false,    // 👈 tắt loading
+        loading: false,   
         error: null,
       };
     
@@ -40,7 +39,7 @@ const authReducer = (state = initialState, action) => {
       return {
         ...state,
         loading: false,
-        error: action.payload, // 👈 lưu thông báo lỗi
+        error: action.payload, 
       };
     
     default:

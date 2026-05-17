@@ -1,4 +1,3 @@
-// src/services/comboFoodServices.js
 import { get } from "../utils";
 
 // Lấy tất cả combo food đang active

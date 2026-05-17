@@ -1,4 +1,3 @@
-// src/pages/user/films/FilmDetailPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {

@@ -1,4 +1,3 @@
-// src/components/CinemaRoom3D/index.jsx
 import React, { useState, useCallback, Suspense, useEffect, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -221,7 +220,7 @@ const CinemaRoom3D = ({ showtime, selectedSeats = [], onSelect }) => {
   const initCameraZ = roomDimensions.depth * 0.38;
   const initCameraY = 6;
 
-  // ✅ Khi fullscreen: giảm DPR + demand frameloop để đỡ lag do pixel nhiều hơn
+  //  Khi fullscreen: giảm DPR + demand frameloop để đỡ lag do pixel nhiều hơn
   // Khi modal thường: giữ nguyên cấu hình cũ (mượt sẵn rồi)
   const canvasDpr       = isFullscreen ? [1, 1]   : [1, 1.5];
   const canvasFrameloop = isFullscreen && !isFirstPerson ? 'demand' : 'always';

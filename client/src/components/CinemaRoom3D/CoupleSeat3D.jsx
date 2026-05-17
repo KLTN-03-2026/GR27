@@ -1,4 +1,3 @@
-// src/components/CinemaRoom3D/CoupleSeat3D.jsx
 //
 // Ghế đôi = 2 ghế sát nhau, tay vịn chỉ 2 bên ngoài cùng.
 //

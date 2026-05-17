@@ -1,4 +1,3 @@
-// src/pages/common/Unauthorized.jsx (403 Page)
 import React from 'react';
 import { Result, Button } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';

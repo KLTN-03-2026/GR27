@@ -1,4 +1,3 @@
-// src/components/CinemaRoom3D/useSeats3D.js
 import { useMemo } from 'react';
 
 export const SEAT_WIDTH    = 1.05;  // khoảng cách ngang ghế thường/VIP

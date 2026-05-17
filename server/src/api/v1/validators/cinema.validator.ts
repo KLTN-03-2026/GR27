@@ -30,7 +30,7 @@ export const validateCreateCinema = (
       address,
       avatar,
       description,
-      cityIds, // ✅ THAY ĐỔI: từ cityId thành cityIds
+      cityIds, 
       status
     } = req.body;
 
@@ -127,7 +127,7 @@ export const validateCreateCinema = (
       return;
     }
 
-    // ✅ THAY ĐỔI: Validate cityIds (mảng)
+   
     if (!cityIds || !Array.isArray(cityIds) || cityIds.length === 0) {
       res.status(400).json({ 
         code: 400, 
@@ -259,7 +259,7 @@ export const validateUpdateCinema = (
       body.description = body.description.trim();
     }
 
-    // ✅ THAY ĐỔI: Validate cityIds (mảng)
+    
     if (body.cityIds !== undefined) {
       if (!Array.isArray(body.cityIds) || body.cityIds.length === 0) {
         res.status(400).json({ 

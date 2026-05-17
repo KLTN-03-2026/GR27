@@ -1,4 +1,3 @@
-// src/components/BookingModal/ComboSelection.jsx
 import React, { useState, useEffect } from 'react';
 import { Button, List, message } from 'antd';
 import { PlusOutlined, MinusOutlined } from '@ant-design/icons';

@@ -1,4 +1,3 @@
-// src/services/commentServices.js
 import { get, post, del, patch } from "../utils";
 import { API_ENDPOINTS } from "../constants";
 

@@ -1,4 +1,3 @@
-// src/pages/admin/cinemas/CinemaEditPage.jsx
 import { useState, useEffect } from "react";
 import { message, Spin } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
@@ -24,7 +23,7 @@ function CinemaEditPage() {
         const result = await getCinemaById(id);
         const dataCinema = result.data;
         setCinemaData(dataCinema);
-        console.log('Cinema data:', result);
+
       } catch (err) {
         console.error("Error fetching cinema:", err);
         setError(err.response?.data?.message || "Không thể tải thông tin rạp chiếu");
@@ -44,7 +43,7 @@ function CinemaEditPage() {
   const handleUpdateCinema = async (values) => {
     setLoading(true);
     try {
-      console.log("Updating cinema with data:", values);
+    
       
       const result = await updateCinema(id, values);
       if (result) {

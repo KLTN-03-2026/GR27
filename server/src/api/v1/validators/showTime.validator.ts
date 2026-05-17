@@ -232,7 +232,7 @@ export const validateCreateShowTime = (
   }
 };
 
-// ✅ Validate cập nhật showtime
+//  Validate cập nhật showtime
 export const validateUpdateShowTime = (
   req: Request,
   res: Response,
@@ -241,11 +241,11 @@ export const validateUpdateShowTime = (
   try {
     const body = { ...req.body };
 
-    // ✅ Loại bỏ các trường hệ thống
+    //  Loại bỏ các trường hệ thống
     const systemFields = ["seats", "createdAt", "updatedAt", "deleted"];
     systemFields.forEach((field) => delete body[field]);
 
-    // ✅ LOGIC MỚI: Kiểm tra có ghế BOOKED sẽ được xử lý trong controller
+    //  LOGIC MỚI: Kiểm tra có ghế BOOKED sẽ được xử lý trong controller
     // Validator CHỈ kiểm tra format dữ liệu hợp lệ
 
     // Validate filmId nếu có
@@ -419,7 +419,7 @@ export const validateUpdateShowTime = (
   }
 };
 
-// ✅ Validate tạo hàng loạt showtime
+//  Validate tạo hàng loạt showtime
 export const validateBulkCreateShowTime = (
   req: Request,
   res: Response,

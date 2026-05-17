@@ -1,10 +1,3 @@
-// src/components/CinemaRoom3D/FirstPersonView.jsx
-//
-// TRUE first-person: camera CỐ ĐỊNH tại vị trí ghế, chỉ xoay tại chỗ.
-//
-// Vấn đề của OrbitControls: nó xoay camera QUANH một target point,
-// dù target đặt ở màn hình thì camera vẫn bay vòng quanh điểm đó.
-// Fix: bỏ OrbitControls, tự handle mouse drag để xoay euler tại chỗ.
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
@@ -86,7 +79,7 @@ const FirstPersonView = ({ seat, screenZ }) => {
     };
   }, [gl, onPointerDown, onPointerMove, onPointerUp]);
 
-  return null; // Không cần OrbitControls
+  return null; 
 };
 
 export default FirstPersonView;

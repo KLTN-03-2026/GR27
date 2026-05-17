@@ -1,12 +1,3 @@
-// src/components/CinemaRoom3D/CinemaSeat3D.jsx
-//
-// Tối ưu performance: gộp toàn bộ geometry của 1 ghế thành 1 mesh duy nhất
-// dùng BufferGeometryUtils.mergeGeometries → giảm draw call từ 7 xuống còn 2
-// (1 cho fabric, 1 cho armrest+leg vì khác material)
-//
-// Trước: 100 ghế × 7 mesh = 700 draw calls
-// Sau:   100 ghế × 2 mesh = 200 draw calls
-
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';

@@ -1,4 +1,3 @@
-// src/components/Chatbot/index.jsx
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,25 +8,9 @@ import {
 import { sendChatMessage } from "../../services/chatbotServices";
 import "./Chatbot.scss";
 
-// ── Markdown-lite renderer ────────────────────────────────────────────────────
-//
-// VẤN ĐỀ STREAMING: Gemini stream link Markdown theo từng chunk nhỏ, ví dụ:
-//   chunk 1 → "xem tại đây: [Vận May](http://localhost:3000/films"
-//   chunk 2 → "/van-may)"
-//
-// Khi renderMarkdown chạy sau chunk 1, regex link Markdown chưa match (thiếu ")"),
-// nhưng regex URL thuần lại bắt được "http://localhost:3000/films" và bọc vào <a>.
-// Sau đó chunk 2 gắn thêm "/van-may)" vào → HTML bị vỡ thành:
-//   http://localhost:3000/films/van-may)" class="chatbot-link">...
-//
-// FIX: Trước khi escape + render, tách phần "đuôi chưa hoàn chỉnh" ra khỏi text.
-// Phần đuôi là bất kỳ chuỗi nào trông như link Markdown đang dở (có "[" hoặc "](")
-// chưa đóng ")". Phần đó được giữ nguyên dạng text, không đưa vào pipeline render.
-// Khi chunk tiếp theo đến, fullBotText đã đủ → render lại toàn bộ → link hoàn chỉnh.
+
 
 const splitIncompleteMarkdownLink = (text) => {
-  // Tìm vị trí xuất hiện cuối cùng của "[" chưa có "](" hoàn chỉnh phía sau
-  // hoặc đang có "](" nhưng chưa có ")" đóng
   const incompletePattern = /(\[[^\]]*$|\[[^\]]*\]\([^)]*$)/;
   const match = text.match(incompletePattern);
   if (!match) return { safe: text, tail: "" };
@@ -68,8 +51,7 @@ const renderMarkdown = (text) => {
           return `<a href="${href}" class="chatbot-link" target="_blank" rel="noopener noreferrer">${label}</a>`;
         }
       )
-      // URL thuần — lookbehind chặt hơn: không bắt URL đã nằm trong href="..."
-      // (tức là sau khi link Markdown đã được render thành thẻ <a> ở bước trên)
+
       .replace(
         /(?<!href=")(?<!\()(?<!\]\()(https?:\/\/[^\s<"&]+)/g,
         '<a href="$1" class="chatbot-link" target="_blank" rel="noopener noreferrer">$1</a>'
@@ -77,8 +59,7 @@ const renderMarkdown = (text) => {
       .replace(/\n/g, "<br/>");
   };
 
-  // Phần safe: render bình thường
-  // Phần tail: escape HTML rồi nối thẳng vào (hiển thị text thô trong khi chờ)
+
   const renderedSafe = processSegment(safe);
   const escapedTail = tail
     .replace(/&/g, "&amp;")
@@ -103,8 +84,7 @@ const QUICK_SUGGESTIONS = [
   "Phim kinh dị đang chiếu",
 ];
 
-// statusText chỉ dùng cho trạng thái "Đang trả lời..." và "Đang tra cứu..."
-// Trạng thái "thinking" sẽ hiển thị trực tiếp trong bubble của bot
+
 const STATUS_TEXT = {
   fetching: "Đang tìm kiếm dữ liệu...",
   answering: "Đang trả lời...",
@@ -151,11 +131,7 @@ const Chatbot = () => {
     if (isOpen) textareaRef.current?.focus();
   }, [isOpen]);
 
-  // ── Xử lý click link nội bộ bên trong dangerouslySetInnerHTML ──────────────
-  // Vì chatbot dùng dangerouslySetInnerHTML, React Router không bắt được
-  // sự kiện click trên thẻ <a> được inject. Ta dùng event delegation để
-  // intercept click và dùng useNavigate — không reload trang, giữ nguyên
-  // lịch sử chat.
+
   const handleBubbleClick = useCallback((e) => {
     const anchor = e.target.closest("a.chatbot-link");
     if (!anchor) return;

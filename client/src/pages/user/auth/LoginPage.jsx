@@ -17,7 +17,7 @@ function LoginPage() {
       const { identifier, password } = values;
       const res = await login({ identifier, password });
 
-      // ✅ KIỂM TRA ROLE
+      //  KIỂM TRA ROLE
       if (res?.role === "admin") {
         // Đăng xuất ngay để clear cookie
         await logout();

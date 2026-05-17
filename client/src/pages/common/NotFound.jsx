@@ -1,4 +1,3 @@
-// src/pages/common/NotFound.jsx (404 Page)
 import React from 'react';
 import { Result, Button } from 'antd';
 import { Link } from 'react-router-dom';

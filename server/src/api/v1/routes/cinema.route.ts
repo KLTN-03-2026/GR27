@@ -8,7 +8,7 @@ import { UserRole } from "../../../types/user.type";
 // [GET] /api/v1/cinemas
 router.get("/", optionalAuthMiddleware, cinemaController.index);
 
-// [GET] /api/v1/cinemas/trash  (admin) — phải đặt TRƯỚC /:id
+// [GET] /api/v1/cinemas/trash  (admin) 
 router.get("/trash", authMiddleware(UserRole.ADMIN), cinemaController.getTrash);
 
 // [GET] /api/v1/cinemas/slug/:slug  (public)

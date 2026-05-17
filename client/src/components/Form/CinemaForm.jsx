@@ -1,4 +1,3 @@
-// src/components/Form/CinemaForm.jsx
 import {
   Button,
   Col,
@@ -142,12 +141,12 @@ function CinemaForm({
       const selectedParent = findCinemaById(parentId);
       
       if (selectedParent && selectedParent.avatar) {
-        console.log("Auto-filling avatar from parent cinema:", selectedParent.avatar);
+        
         
         // Tự động set avatar từ rạp cha
         forceSetImage(selectedParent.avatar);
         
-        // Cũng cập nhật form field (nếu cần thiết cho validation)
+        
         form.setFieldValue('avatar', [{
           uid: "-auto",
           name: "parent-avatar.jpg",
@@ -209,12 +208,12 @@ function CinemaForm({
       const avatarUrl = await getFinalImageUrl(initialValues?.avatar);
       values.avatar = avatarUrl;
 
-      // Fix: Xử lý status đúng cách
+     
       if (typeof values.status === 'boolean') {
         values.status = values.status ? "active" : "inactive";
       }
 
-      console.log("Values after processing:", values);
+     
       const result = await onFinish(values);
 
       // Chỉ reset form khi onFinish return true (thành công)

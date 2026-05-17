@@ -70,7 +70,7 @@ const roomSchema = new Schema<IRoomDocument>(
   },
   {
     timestamps: true, // Tự động quản lý createdAt và updatedAt
-    versionKey: false, // Tắt trường __v không cần thiết
+    versionKey: false, 
   }
 );
 

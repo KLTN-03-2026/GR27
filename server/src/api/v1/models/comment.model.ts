@@ -4,13 +4,10 @@ import { IComment } from "../../../types/comment.type";
 
 export type ICommentDocument = HydratedDocument<IComment>;
 
-/**
- * Schema định nghĩa cấu trúc của một document Comment trong MongoDB.
- * Nó ánh xạ từ ICommentDocument interface để đảm bảo an toàn về kiểu dữ liệu.
- */
+
 const commentSchema = new Schema<ICommentDocument>(
   {
-    // Tham chiếu đến model User. Giúp cho việc populate dữ liệu người dùng sau này.
+    
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -39,8 +36,8 @@ const commentSchema = new Schema<ICommentDocument>(
     },
   },
   {
-    timestamps: true, // Tự động quản lý createdAt và updatedAt
-    versionKey: false, // Tắt trường __v không cần thiết
+    timestamps: true, 
+    versionKey: false, 
   }
 );
 
@@ -49,10 +46,7 @@ commentSchema.index({ filmId: 1, createdAt: -1 }); // Để lấy nhanh tất c�
 commentSchema.index({ userId: 1 }); // Để tìm tất cả bình luận của một người dùng
 commentSchema.index({ isReported: 1 }); // Index cho trường isReported để lọc các bình luận bị báo cáo nhanh hơn
 
-/**
- * Model cho Comment, được biên dịch từ commentSchema.
- * Cung cấp một giao diện để tương tác với collection 'comments' trong database.
- */
+
 const Comment = model<ICommentDocument>("Comment", commentSchema, "comments");
 
 export default Comment;

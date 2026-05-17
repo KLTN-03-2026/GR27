@@ -1,5 +1,3 @@
-// src/context/BookingContext.jsx
-
 import React, { createContext, useState, useContext, useCallback } from 'react';
 import { message } from 'antd';
 import { useNavigate } from 'react-router-dom';

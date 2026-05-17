@@ -1,4 +1,3 @@
-// src/pages/user/ticket/TicketDetailPage.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button, Typography, Image, message, Divider } from "antd";

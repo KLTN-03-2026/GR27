@@ -44,7 +44,7 @@ export const validateLogin = (
       return res.status(400).json({ message: passwordError });
     }
 
-    next(); // ✅ hợp lệ thì cho chạy tiếp
+    next(); 
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Lỗi server" });

@@ -23,7 +23,6 @@ function FilmEditPage() {
         const result = await getFilmById(id);
         const dataFilm = result.data;
         setFilmData(dataFilm);
-        console.log('result', result);
       } catch (err) {
         console.error("Error fetching film:", err);
         setError(err.response?.data?.message || "Không thể tải thông tin phim");

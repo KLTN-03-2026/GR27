@@ -25,7 +25,6 @@ const useImageUpload = (options = {}) => {
   const [fileList, setFileList] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [hasUserInteraction, setHasUserInteraction] = useState(false);
-  // ✅ NEW: State để lưu URL ảnh từ external source (rạp cha)
   const [externalImageUrl, setExternalImageUrl] = useState(null);
 
   // Helper function để convert file sang base64
@@ -41,7 +40,7 @@ const useImageUpload = (options = {}) => {
   const beforeUpload = (file) => {
     setFileToUpload(file);
     setHasUserInteraction(true);
-    setExternalImageUrl(null); // ✅ Clear external URL khi user chọn file mới
+    setExternalImageUrl(null); 
     return false; // Ngăn auto upload
   };
 
@@ -63,13 +62,13 @@ const useImageUpload = (options = {}) => {
     if (info.fileList.length === 0) {
       setFileToUpload("");
       setPreviewImage("");
-      setExternalImageUrl(null); // ✅ Clear external URL
+      setExternalImageUrl(null); 
     }
     
     // Nếu có file mới được thêm vào
     if (info.fileList.length > 0 && info.file?.originFileObj) {
       setFileToUpload(info.file.originFileObj);
-      setExternalImageUrl(null); // ✅ Clear external URL khi có file mới
+      setExternalImageUrl(null); 
     }
   };
 
@@ -117,7 +116,7 @@ const useImageUpload = (options = {}) => {
     }
   };
 
-  // ✅ FIXED: Force set image với xử lý externalImageUrl
+  
   const forceSetImage = (imageUrl) => {
     if (imageUrl) {
       setPreviewImage(imageUrl);
@@ -131,8 +130,8 @@ const useImageUpload = (options = {}) => {
         },
       ];
       setFileList(initialFileList);
-      setExternalImageUrl(imageUrl); // ✅ Lưu URL external
-      setFileToUpload(null); // ✅ Reset fileToUpload
+      setExternalImageUrl(imageUrl); 
+      setFileToUpload(null); 
       setHasUserInteraction(false);
     }
   };
@@ -143,7 +142,7 @@ const useImageUpload = (options = {}) => {
     setPreviewImage("");
     setFileList([]);
     setPreviewOpen(false);
-    setExternalImageUrl(null); // ✅ Clear external URL
+    setExternalImageUrl(null); 
     setHasUserInteraction(true);
   };
 
@@ -154,37 +153,37 @@ const useImageUpload = (options = {}) => {
     setFileList([]);
     setPreviewOpen(false);
     setUploading(false);
-    setExternalImageUrl(null); // ✅ Clear external URL
+    setExternalImageUrl(null); 
     setHasUserInteraction(false);
   };
 
-  // ✅ FIXED: Lấy URL cuối cùng để submit form
+  
   const getFinalImageUrl = async (currentImageUrl = null) => {
-    // ✅ Ưu tiên 1: Có external URL (từ rạp cha)
+    
     if (externalImageUrl) {
       console.log("Using external URL:", externalImageUrl);
       return externalImageUrl;
     }
 
-    // ✅ Ưu tiên 2: Có file mới để upload
+    
     if (fileToUpload && fileToUpload !== "") {
       console.log("Uploading new file");
       return await uploadImage();
     }
     
-    // ✅ Ưu tiên 3: Ảnh đã bị xóa
+    
     if (fileToUpload === "") {
       console.log("Image deleted, using default");
       return defaultImage;
     }
     
-    // ✅ Ưu tiên 4: Giữ nguyên ảnh cũ nếu không có thay đổi
+    
     if (currentImageUrl && fileToUpload === null) {
       console.log("Keeping current image:", currentImageUrl);
       return currentImageUrl;
     }
     
-    // ✅ Trường hợp không có ảnh
+    
     console.log("No image, using default");
     return defaultImage;
   };
@@ -196,7 +195,7 @@ const useImageUpload = (options = {}) => {
     previewImage,
     uploading,
     hasUserInteraction,
-    externalImageUrl, // ✅ Export để debug nếu cần
+    externalImageUrl, 
     
     // Handlers cho Antd Upload component
     beforeUpload,

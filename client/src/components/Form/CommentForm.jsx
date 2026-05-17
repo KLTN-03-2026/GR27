@@ -1,4 +1,3 @@
-// src/components/Form/CommentForm.jsx
 import { useEffect } from "react";
 import { Modal, Form, Rate, Input, Button, Typography } from "antd";
 

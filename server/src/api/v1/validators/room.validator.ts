@@ -406,12 +406,12 @@ export const validateUpdateRoom = (
         }
       }
 
-      // ✅ FIX: Làm sạch dữ liệu update NHƯNG GIỮ NGUYÊN seatKey
+      
       body.seatLayout = body.seatLayout.map((seat: any) => ({
         ...seat,
         row: seat.row.trim().toUpperCase(),
-        // ✅ QUAN TRỌNG: Giữ nguyên seatKey từ frontend
-        seatKey: seat.seatKey.trim(), // Chỉ trim, không tự tạo lại
+        
+        seatKey: seat.seatKey.trim(), 
         ...(seat.partnerSeatKey && { partnerSeatKey: seat.partnerSeatKey.trim() })
       }));
     }

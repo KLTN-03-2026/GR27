@@ -9,7 +9,7 @@ import { validateCreateFilm, validateUpdateFilm } from "../validators/film.valid
 // [GET] /api/v1/films
 router.get("/", optionalAuthMiddleware, filmController.index);
 
-// [GET] /api/v1/films/trash  (admin) — phải đặt TRƯỚC /:id để không bị match nhầm
+// [GET] /api/v1/films/trash  (admin) 
 router.get("/trash", authMiddleware(UserRole.ADMIN), filmController.getTrash);
 
 // [GET] /api/v1/films/slug/:slug  (public)

@@ -23,7 +23,6 @@ function ShowTimeEditPage() {
         const result = await getShowTimeById(id);
         const dataShowTime = result.data;
         setShowTimeData(dataShowTime);
-        console.log('ShowTime data:', result);
       } catch (err) {
         console.error("Error fetching showtime:", err);
         setError(err.response?.data?.message || "Không thể tải thông tin suất chiếu");
@@ -43,8 +42,6 @@ function ShowTimeEditPage() {
   const handleUpdateShowTime = async (values) => {
     setLoading(true);
     try {
-      console.log("Updating showtime with data:", values);
-      
       const result = await updateShowTime(id, values);
       if (result) {
         messageApi.open({

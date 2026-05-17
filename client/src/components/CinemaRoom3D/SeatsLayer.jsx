@@ -1,9 +1,3 @@
-// src/components/CinemaRoom3D/SeatsLayer.jsx
-//
-// Tối ưu: bọc CinemaSeat3D và CoupleSeat3D bằng React.memo
-// → chỉ re-render ghế khi đúng ghế đó thay đổi trạng thái
-// → tránh toàn bộ 100+ ghế re-render khi hover/click 1 ghế
-
 import React from 'react';
 import CinemaSeat3D from './CinemaSeat3D';
 import CoupleSeat3D from './CoupleSeat3D';

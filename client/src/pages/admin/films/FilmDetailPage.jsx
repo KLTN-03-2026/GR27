@@ -50,7 +50,6 @@ const FilmDetailPage = () => {
       setError(null);
       const result = await getFilmById(id);
       setFilmData(result.data);
-      console.log("Film data:", result.data);
     } catch (err) {
       console.error("Error fetching film:", err);
       setError(err.response?.data?.message || "Không thể tải thông tin phim");

@@ -18,10 +18,10 @@ export const otpLimiterByEmail = rateLimit({
     code: 429,
     message: "Bạn chỉ được yêu cầu OTP mỗi 60 giây.",
   },
-  skipFailedRequests: true, // Không tính những request bị lỗi trước đó (VD: nhập sai định dạng)
+  skipFailedRequests: true, // Không tính những request bị lỗi trước đó 
 });
 
-// Thêm Limiter cho việc nhập OTP (cho phép 5 lần thử trong 5 phút)
+// Limiter cho việc nhập OTP (cho phép 5 lần thử trong 5 phút)
 export const otpVerifyLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 phút
   max: 5,                  // Cho phép tối đa 5 lần thử

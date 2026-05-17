@@ -1,4 +1,3 @@
-// src/components/BookingModal/QRCodePayment.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { Row, Col, Typography, Button, message, Space, Alert } from "antd";
 import { CopyOutlined, BulbOutlined, ClockCircleOutlined } from "@ant-design/icons";
@@ -13,7 +12,7 @@ const bankLogos = {
     name: "Ngân hàng TMCP Quân đội",
     logo: "https://upload.wikimedia.org/wikipedia/commons/2/25/Logo_MB_new.png",
   },
-  // Thêm các ngân hàng khác nếu cần
+
 };
 
 const QRCodePayment = ({ paymentData, onCancel, onTimeout }) => {

@@ -1,4 +1,3 @@
-// src/components/BookingModal/index.jsx
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Steps, Button, message, Spin, Result } from "antd";

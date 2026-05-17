@@ -1,4 +1,3 @@
-// src/pages/user/ticket/TicketHistoryListPage.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Row, Col, Typography, Tag, Button, Space, message, Pagination, Empty, Select } from 'antd';

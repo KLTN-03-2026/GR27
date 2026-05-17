@@ -1,8 +1,7 @@
-// src/pages/user/ticket/TicketRenderer.jsx
 import React, { forwardRef } from "react";
 import { Typography, Image, Divider } from "antd";
 import dayjs from "dayjs";
-import "./TicketDetailPage.scss"; // Import file SCSS để áp dụng style cho vé
+import "./TicketDetailPage.scss"; 
 
 const { Title, Text } = Typography;
 

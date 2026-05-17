@@ -1,6 +1,6 @@
 import { PayOS } from "@payos/node";
 
-// ✅ Khởi tạo PayOS client với config mới (v2.x)
+//  Khởi tạo PayOS client với config mới (v2.x)
 const payos = new PayOS({
   clientId: process.env.PAYOS_CLIENT_ID!,
   apiKey: process.env.PAYOS_API_KEY!,
@@ -13,7 +13,7 @@ const payos = new PayOS({
 });
 
 /**
- * ✅ Tạo payment link (v2.x API)
+ *  Tạo payment link (v2.x API)
  */
 export const createPaymentLink = async (
   orderCode: number,
@@ -31,7 +31,7 @@ export const createPaymentLink = async (
       cancelUrl,
     };
 
-    // ✅ Sử dụng paymentRequests.create() thay vì paymentRequests.create()
+    //  Sử dụng paymentRequests.create() thay vì paymentRequests.create()
     const paymentLinkRes = await payos.paymentRequests.create(paymentData);
     return paymentLinkRes;
   } catch (error) {
@@ -41,28 +41,28 @@ export const createPaymentLink = async (
 };
 
 /**
- * ✅ Verify webhook data (v2.x API)
+ *  Verify webhook data (v2.x API)
  * @param webhookData - Data nhận từ webhook endpoint
  * @returns Verified webhook data hoặc null nếu signature không hợp lệ
  */
 export const verifyPaymentWebhookData = async (webhookData: any) => {
   try {
-    // ✅ Sử dụng webhooks.verify() để verify và nhận data
+    //  Sử dụng webhooks.verify() để verify và nhận data
     const verifiedData = await payos.webhooks.verify(webhookData);
     return verifiedData;
   } catch (error) {
     console.error("PayOS verifyPaymentWebhookData error:", error);
-    // ✅ Trả về null thay vì false để phân biệt lỗi và invalid signature
+    //  Trả về null thay vì false để phân biệt lỗi và invalid signature
     return null;
   }
 };
 
 /**
- * ✅ Lấy thông tin payment link (v2.x API)
+ *  Lấy thông tin payment link (v2.x API)
  */
 export const getPaymentLinkInformation = async (orderCode: number) => {
   try {
-    // ✅ Sử dụng paymentRequests.get() với orderCode
+    //  Sử dụng paymentRequests.get() với orderCode
     const paymentInfo = await payos.paymentRequests.get(orderCode);
     return paymentInfo;
   } catch (error) {
@@ -72,14 +72,14 @@ export const getPaymentLinkInformation = async (orderCode: number) => {
 };
 
 /**
- * ✅ Hủy payment link (v2.x API)
+ *  Hủy payment link (v2.x API)
  */
 export const cancelPaymentLink = async (
   orderCode: number,
   cancellationReason?: string
 ) => {
   try {
-    // ✅ Sử dụng paymentRequests.cancel()
+    //  Sử dụng paymentRequests.cancel()
     const result = await payos.paymentRequests.cancel(
       orderCode,
       cancellationReason
@@ -92,7 +92,7 @@ export const cancelPaymentLink = async (
 };
 
 /**
- * ✅ NEW: Đăng ký webhook endpoint (v2.x feature)
+ * Đăng ký webhook endpoint (v2.x feature)
  * Chỉ cần gọi 1 lần khi setup
  */
 export const registerWebhook = async (webhookUrl: string) => {
@@ -106,7 +106,7 @@ export const registerWebhook = async (webhookUrl: string) => {
 };
 
 /**
- * ✅ NEW: Tạo signature thủ công nếu cần (v2.x feature)
+ * Tạo signature thủ công (v2.x feature)
  */
 export const createSignature = async (data: any) => {
   try {
@@ -121,5 +121,5 @@ export const createSignature = async (data: any) => {
   }
 };
 
-// ✅ Export PayOS client instance để sử dụng trực tiếp nếu cần
+
 export default payos;

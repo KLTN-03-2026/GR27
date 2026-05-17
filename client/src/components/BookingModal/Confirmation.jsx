@@ -1,4 +1,3 @@
-// src/components/BookingModal/Confirmation.jsx
 import React from 'react';
 import { Typography, Divider, Card } from 'antd';
 import dayjs from 'dayjs';

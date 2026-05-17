@@ -1,4 +1,3 @@
-// src/routes/adminRoutes.js
 import { lazy, Suspense } from "react";
 import LayoutAdmin from "../layouts/LayoutAdmin";
 import PrivateRoutes from "./PrivateRoutes";

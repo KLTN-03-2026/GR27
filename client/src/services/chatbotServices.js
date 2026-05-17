@@ -1,5 +1,4 @@
-// src/services/chatbotServices.js
-// Dùng fetch thay axios vì SSE (Server-Sent Events) không hỗ trợ qua axios
+
 
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api/v1";

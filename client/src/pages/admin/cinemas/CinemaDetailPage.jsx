@@ -46,7 +46,7 @@ const CinemaDetailPage = () => {
       setError(null);
       const result = await getCinemaById(id);
       setCinemaData(result.data);
-      console.log("Cinema data:", result.data);
+      
     } catch (err) {
       console.error("Error fetching cinema:", err);
       setError(err.response?.data?.message || "Không thể tải thông tin rạp chiếu");

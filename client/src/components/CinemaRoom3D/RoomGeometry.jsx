@@ -1,9 +1,3 @@
-// src/components/CinemaRoom3D/RoomGeometry.jsx
-//
-// Thêm bậc thang sàn (stepped floor) theo từng hàng ghế như rạp thật.
-// Nhận thêm props: totalRows, rowDepth, rowElevation từ useSeats3D
-// để tính chính xác vị trí và kích thước từng bậc.
-
 import React from "react";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";

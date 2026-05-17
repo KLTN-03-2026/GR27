@@ -10,16 +10,13 @@ mongoose.plugin(slug);
 
 
 export type IFilmDocument = HydratedDocument<IFilm>;
-/**
- * Schema định nghĩa cấu trúc của document Film trong MongoDB.
- * Nó ánh xạ từ IFilmDocument interface để đảm bảo type-safety.
- */
+
 const filmSchema = new Schema<IFilmDocument>(
   {
     title: { type: String, required: true, trim: true },
     otherTitles: [String],
     // Thiết lập tham chiếu đến model 'Category'
-    // Giúp cho việc populate dữ liệu danh mục sau này dễ dàng hơn.
+    
     categoryIds: [{ type: Schema.Types.ObjectId, ref: 'Category', required: true }],
     actors: [String],
     directors: [String],
@@ -32,7 +29,7 @@ const filmSchema = new Schema<IFilmDocument>(
     filmLanguage: { type: String, required: true },
     subtitles: { type: String, required: true },
     description: { type: String, required: true, trim: true },
-    // Slug rất quan trọng cho SEO và URL, nên là duy nhất và viết thường
+    
     slug: {
       type: String,
       slug: "title",
@@ -57,7 +54,7 @@ const filmSchema = new Schema<IFilmDocument>(
   },
   {
     timestamps: true, // Tự động quản lý createdAt và updatedAt
-    versionKey: false, // Tắt trường __v không cần thiết
+    versionKey: false, 
   }
 );
 
